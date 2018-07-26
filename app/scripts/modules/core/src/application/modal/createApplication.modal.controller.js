@@ -25,7 +25,10 @@ module.exports = angular
     applicationLoader.then(applications => (this.data.appNameList = _.map(applications, 'name')));
 
     let providerLoader = AccountService.listProviders();
-    providerLoader.then(providers => (this.data.cloudProviders = providers));
+    providerLoader.then(providers => {
+      console.log('~~ providers: ' + providers);
+      this.data.cloudProviders = providers;
+    });
 
     $q
       .all([applicationLoader, providerLoader])

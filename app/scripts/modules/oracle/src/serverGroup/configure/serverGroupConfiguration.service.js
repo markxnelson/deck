@@ -20,6 +20,23 @@ module.exports = angular
       });
     };
 
+    let loadAvailabilityDomains = command => {
+      if (command.account && command.region) {
+        AccountService.getAvailabilityZonesForAccountAndRegion(oracle, command.account, command.region).then(
+          availDoms => {
+            if (availDoms) {
+              command.backingData.filtered.availabilityDomains = availDoms.map(av => {
+                return { name: av };
+              });
+            } else {
+              command.backingData.filtered.availabilityDomains = [];
+              command.availabilityDomain = null;
+            }
+          },
+        );
+      }
+    };
+
     function configureCommand(application, command) {
       let defaults = command || {};
       let defaultCredentials =
@@ -43,7 +60,6 @@ module.exports = angular
         .then(function(backingData) {
           backingData.accounts = _.keys(backingData.credentialsKeyedByAccount);
           backingData.filtered = {};
-          backingData.filtered.regions = [{ name: 'us-phoenix-1' }];
           backingData.filtered.availabilityDomains = _.map(backingData.availDomains, function(zone) {
             return { name: zone };
           });
@@ -56,6 +72,23 @@ module.exports = angular
               });
             }
             return backingData.subnets;
+          };
+
+          backingData.accountOnChange = function() {
+            if (command.account) {
+              let selectedAccountDetails = command.backingData.credentialsKeyedByAccount[command.account];
+              backingData.filtered.regions = _.map(selectedAccountDetails.regions, region => {
+                return { name: region.name };
+              });
+              if (selectedAccountDetails) {
+                command.region = selectedAccountDetails.region;
+              }
+            }
+            loadAvailabilityDomains(command);
+          };
+
+          backingData.regionOnChange = function() {
+            loadAvailabilityDomains(command);
           };
 
           backingData.availabilityDomainOnChange = function() {
@@ -96,7 +129,7 @@ module.exports = angular
             shapesMap[image.id] = getShapes(image);
           });
           backingData.filtered.shapes = shapesMap;
-          backingData.filtered.allShapes = _.uniqBy(_.flatten(shapesMap), 'name');
+          backingData.filtered.allShapes = _.uniqBy(_.flatten(_.values(shapesMap)), 'name');
           command.backingData = backingData;
         });
     }
