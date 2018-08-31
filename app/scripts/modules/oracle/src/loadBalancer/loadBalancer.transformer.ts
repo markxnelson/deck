@@ -5,9 +5,11 @@ import { module, IPromise } from 'angular';
 import { OracleProviderSettings } from '../oracle.settings';
 import { Application } from '../../../core/src/application';
 import {
+  IOracleBackEndSet,
   IOracleListener,
   IOracleLoadBalancer,
   IOracleLoadBalancerUpsertCommand,
+  LoadBalancingPolicy,
 } from 'oracle/domain/IOracleLoadBalancer';
 import { $q } from 'ngimport';
 
@@ -54,7 +56,13 @@ export class OracleLoadBalancerTransformer {
         return result;
       }, {}),
       hostnames: loadBalancer.hostnames,
-      backendSets: loadBalancer.backendSets,
+      backendSets: loadBalancer.backendSets.reduce(
+        (result: { [name: string]: IOracleBackEndSet }, item: IOracleBackEndSet) => {
+          result[item.name] = item;
+          return result;
+        },
+        {},
+      ),
       freeformTags: loadBalancer.freeformTags,
       loadBalancerType: loadBalancer.type,
       securityGroups: loadBalancer.securityGroups,
@@ -76,7 +84,7 @@ export class OracleLoadBalancerTransformer {
       subnetIds: [],
       listeners: {},
       hostnames: [],
-      backendSets: [],
+      backendSets: {},
       freeformTags: {},
       loadBalancerType: null,
       securityGroups: [],
@@ -86,6 +94,14 @@ export class OracleLoadBalancerTransformer {
 
   public constructNewListenerTemplate(name: string): IOracleListener {
     return { name: name, port: 80, protocol: 'HTTP', defaultBackendSetName: undefined };
+  }
+
+  public constructNewBackendSetTemplate(name: string): IOracleBackEndSet {
+    return {
+      name: name,
+      policy: LoadBalancingPolicy.ROUND_ROBIN,
+      healthChecker: { urlPath: '/healthZ' },
+    };
   }
 }
 

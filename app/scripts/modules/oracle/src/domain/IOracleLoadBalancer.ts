@@ -4,7 +4,11 @@ import { ISubnet } from '../../../core/src/domain';
 // import { IAmazonServerGroup } from './IAmazonServerGroup';
 
 export type ListenerProtocol = 'HTTP' | 'HTTPS' | 'TCP' | 'SSL';
-export type LoadBalancingPolicy = 'ROUND_ROBIN' | 'IP_HASH' | 'LEAST_CONNECTIONS';
+export enum LoadBalancingPolicy {
+  ROUND_ROBIN = 'ROUND_ROBIN',
+  IP_HASH = 'IP_HASH',
+  LEAST_CONNECTIONS = 'LEAST_CONNECTIONS',
+}
 
 export interface IOracleSubnet extends ISubnet {
   availabilityDomain: string;
@@ -48,7 +52,7 @@ export interface IOracleHostname {
 export interface IOracleBackEndSet {
   name: string;
   policy: LoadBalancingPolicy;
-  healthChecker: IOracleLoadBalancerHealthCheckPolicy;
+  healthChecker: IOracleBackendSetHealthCheck;
   // TODO desagar sessionPersistenceConfiguration?: IOracleLoadBalancerSessionPersistenceConfiguration;
 }
 
@@ -61,7 +65,7 @@ export interface IOracleListenerCertificate {
   passphrase: string;
 }
 
-export interface IOracleLoadBalancerHealthCheckPolicy {
+export interface IOracleBackendSetHealthCheck {
   urlPath: string; // required
   protocol?: 'HTTP' | 'TCP';
   port?: number;
@@ -82,7 +86,7 @@ export interface IOracleLoadBalancerUpsertCommand extends ILoadBalancerUpsertCom
   subnetIds: string[]; // required 1 for private LB, 2 for public LB
   listeners?: { [name: string]: IOracleListener }; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
   hostnames?: IOracleHostname[];
-  backendSets?: IOracleBackEndSet[]; // not required to create LB, but useless without it (TODO should we require backend set?)
+  backendSets?: { [name: string]: IOracleBackEndSet }; // not required to create LB, but useless without it (TODO should we require backend set?)
   freeformTags?: { [tagName: string]: string };
   loadBalancerType?: string; // is this needed because it is there in ILoadBalancer but not ILoadBalancerUpsertCommand??
   securityGroups: string[]; // is this needed because it is there in ILoadBalancer but not ILoadBalancerUpsertCommand??
