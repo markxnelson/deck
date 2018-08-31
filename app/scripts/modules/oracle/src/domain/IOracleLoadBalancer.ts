@@ -1,9 +1,16 @@
 import { ILoadBalancer, ILoadBalancerDeleteCommand, ILoadBalancerUpsertCommand } from '@spinnaker/core';
+import { ISubnet } from '../../../core/src/domain';
 
 // import { IAmazonServerGroup } from './IAmazonServerGroup';
 
 export type ListenerProtocol = 'HTTP' | 'HTTPS' | 'TCP' | 'SSL';
 export type LoadBalancingPolicy = 'ROUND_ROBIN' | 'IP_HASH' | 'LEAST_CONNECTIONS';
+
+export interface IOracleSubnet extends ISubnet {
+  availabilityDomain: string;
+  securityListIds: string[];
+  vcnId: string;
+}
 
 export interface IOracleLoadBalancer extends ILoadBalancer {
   shape: string; // required
@@ -20,7 +27,7 @@ export interface IOracleListener {
   name: string;
   protocol: ListenerProtocol;
   port: number;
-  backendSetName: string;
+  defaultBackendSetName: string;
   sslConfiguration?: IOracleListenerSSLConfiguration;
   hostnames?: IOracleHostname[];
   // TODO support pathRouteSets
@@ -73,7 +80,7 @@ export interface IOracleLoadBalancerUpsertCommand extends ILoadBalancerUpsertCom
   shape: string; // required
   isPrivate: boolean; // required
   subnetIds: string[]; // required 1 for private LB, 2 for public LB
-  listeners?: IOracleListener[]; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
+  listeners?: { [name: string]: IOracleListener }; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
   hostnames?: IOracleHostname[];
   backendSets?: IOracleBackEndSet[]; // not required to create LB, but useless without it (TODO should we require backend set?)
   freeformTags?: { [tagName: string]: string };
