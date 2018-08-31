@@ -1,5 +1,7 @@
 <div>
-  <div>accounts loaded: {{state.accountsLoaded}}, getname returns {{ctrl.loadBalancer.name}}, isnew is {{ctrl.isNew}}</div>
+  <div>accounts loaded: {{state.accountsLoaded}}, getname returns {{loadBalancerCmd.name}}, isnew is {{ctrl.isNew}}
+    subnets is: {{ctrl.filteredSubnets}}
+  </div>
   <div ng-if="!state.accountsLoaded" style="height: 200px" class="horizontal center middle">
     <loading-spinner size="'small'"></loading-spinner>
   </div>
@@ -7,17 +9,37 @@
     <div class="form-group">
       <div class="col-md-12 well" ng-class="{'alert-danger': form.loadBalancerName.$error.validateUnique, 'alert-info': !form.loadBalancerName.$error.validateUnique}">
         <strong>Your load balancer will be named:</strong>
-        <span>{{ctrl.loadBalancer.name}}</span>
+        <span>{{loadBalancerCmd.name}}</span>
           <!-- Angular does not seem to run length validation on hidden inputs, hence the text + display:none -->
         <input type="text"
                style="display: none"
                ng-maxlength="32"
                class="form-control input-sm"
-               ng-model="ctrl.loadBalancer.name"
+               ng-model="loadBalancerCmd.name"
                validate-unique="existingLoadBalancerNames"
                validate-ignore-case="true"
                name="loadBalancerName"/>
         <validation-error ng-if="form.loadBalancerName.$error.validateUnique" message="There is already a load balancer in {{loadBalancer.credentials}}:{{loadBalancer.region}} with that name."></validation-error>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-md-3 sm-label-right">Shape</div>
+      <div class="col-md-7">
+        <ui-select class="form-control input-sm" required ng-model="loadBalancerCmd.shape">
+          <ui-select-match placeholder="Select Shape">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="shape in ctrl.shapes | filter: $select.search">
+            <span ng-bind-html="shape | highlight: $select.search"></span>
+          </ui-select-choices>
+        </ui-select>
+        <!-- <select class="form-control input-sm" ng-model="loadBalancer.shape" required ng-options="shape for shapes in shapes"></select> -->
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-md-3 sm-label-right">Private Load Balancer</div>
+      <div class="col-md-7 checkbox">
+        <label>
+          <input type="checkbox" name="isPrivate" ng-model="loadBalancerCmd.isPrivate" on-change="ctrl.isPrivateChanged()"/>
+        </label>
       </div>
     </div>
     <div class="form-group">
@@ -41,24 +63,35 @@
     </div>
 
     <div class="form-group">
-      <div class="col-md-3 sm-label-right">Subnet</div>
+      <div class="col-md-3 sm-label-right">Subnets</div>
       <div class="col-md-7">
-          <ui-select class="form-control input-sm" required ng-model="ctrl.selectedSubnet" on-select="ctrl.selectedSubnetChanged($item)">
-            <ui-select-match placeholder="Select from existing subnets">{{$select.selected.name}}</ui-select-match>
+          <ui-select multiple required limit="2"
+                     name="subnets"
+                     class="form-control input-sm"
+                     ng-model="ctrl.selectedSubnets"
+                     on-select="ctrl.selectedSubnetsChanged($item)"
+                     on-remove="ctrl.selectedSubnetsChanged($item)">
+            <ui-select-match placeholder="Select from existing subnets">{{$item.name}}</ui-select-match>
             <ui-select-choices repeat="subnet in ctrl.filteredSubnets | filter: $select.search">
               <span ng-bind-html="subnet.name | highlight: $select.search"></span>
             </ui-select-choices>
           </ui-select>
       </div>
     </div>
-
+    <div ng-if="ctrl.filteredSubnets.length > 0">
+      <div class="col-md-7 col-md-offset-3" ng-if="loadBalancerCmd.isPrivate && ctrl.selectedSubnets.length != 1">
+        <validation-error message="Exactly one subnet must be selected for a private load balancer."></validation-error>
+      </div>
+      <div class="col-md-7 col-md-offset-3" ng-if="!loadBalancerCmd.isPrivate && ctrl.selectedSubnets.length != 2">
+        <validation-error message="Exactly 2 subnets must be selected for a public load balancer."></validation-error>
+      </div>
+    </div>
     <div class="form-group">
       <div class="col-md-3 sm-label-right">Stack <help-field key="oracle.loadBalancer.stack"></help-field></div>
       <div class="col-md-3">
-        <input required
-               type="text"
+        <input type="text"
                class="form-control input-sm"
-               ng-model="ctrl.loadBalancer.stack"
+               ng-model="loadBalancerCmd.stack"
                name="stackName"
                ng-change="ctrl.updateName()"
                ng-pattern="/^[a-zA-Z0-9]*$/"/>
@@ -67,10 +100,9 @@
         <label class="sm-label-right">
           Detail <help-field key="oracle.loadBalancer.detail"></help-field>
         </label>
-        <input required
-               type="text"
+        <input type="text"
                class="form-control input-sm"
-               ng-model="ctrl.loadBalancer.detail"
+               ng-model="loadBalancerCmd.detail"
                name="detailName"
                ng-change="ctrl.updateName()"
                ng-pattern="/^[a-zA-Z0-9-]*$/"/>

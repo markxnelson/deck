@@ -4,33 +4,37 @@
       <table class="table table-condensed packed">
         <thead>
           <tr>
+            <th>Name</th>
             <th>Protocol</th>
-            <th>External Port</th>
-            <th></th>
-            <th>Internal Port</th>
-            <th></th>
+            <th>Port</th>
+            <th>Backend Set Name</th>
+            <!-- TODO <th>SSL config</th>
+            <th>Hostnames</th> -->
           </tr>
         </thead>
         <tbody>
-          <tr ng-repeat="rule in loadBalancer.loadBalancingRules">
+          <tr ng-repeat="(name, listener) in loadBalancerCmd.listeners">
             <td>
-              <select class="form-control input-sm" ng-model="rule.protocol" ng-options="protocol for protocol in ['HTTP']"></select>
+              <input class="form-control input-sm" ng-model="listener.name" required ng-blur="ctrl.listenerNameChanged()"/>
             </td>
             <td>
-              <input class="form-control input-sm" type="number" min="0" ng-model="rule.externalPort" required/>
+              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']"></select>
             </td>
-            <td class="small" style="padding-top: 10px;">&rarr;</td>
             <td>
-              <input class="form-control input-sm" type="number" min="0" ng-model="rule.backendPort" required/>
+              <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required/>
             </td>
-            <td><a href class="sm-label" ng-click="ctrl.removeListener($index)"><span
+            <td>
+              <input class="form-control input-sm" ng-model="listener.backendSetName" required/>
+            </td>
+            <td><a href class="sm-label" ng-click="ctrl.removeListener(listener.name)"><span
               class="glyphicon glyphicon-trash"></span></a></td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td colspan="5">
-              <button class="add-new col-md-12" ng-click="ctrl.addListener()"><span class="glyphicon glyphicon-plus-sign"></span> Add new port mapping
+              <button class="add-new col-md-12" ng-click="ctrl.addListener()"><span class="glyphicon glyphicon-plus-sign"></span>
+                Add Listener
               </button>
             </td>
           </tr>

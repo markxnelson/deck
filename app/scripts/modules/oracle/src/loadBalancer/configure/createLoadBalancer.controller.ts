@@ -16,7 +16,7 @@ import {
 } from '@spinnaker/core';
 
 import { Application } from '../../../../core/src/application';
-import { IOracleLoadBalancerUpsertCommand } from 'oracle/domain/IOracleLoadBalancer';
+import { IOracleListener, IOracleLoadBalancer, IOracleSubnet } from 'oracle/domain/IOracleLoadBalancer';
 import {
   ORACLE_LOAD_BALANCER_TRANSFORMER,
   OracleLoadBalancerTransformer,
@@ -28,6 +28,7 @@ import { SubnetReader } from '../../../../core/src/subnet';
 
 export class OracleLoadBalancerController implements IController {
   public oracle = 'oracle';
+  public shapes: string[] = ['100Mbps', '400Mbps', '8000Mbps']; // TODO desagar use listShapes to get this from clouddriver later
   public taskMonitor: any;
   public pages: { [key: string]: any } = {
     properties: require('./createLoadBalancerProperties.html'),
@@ -41,12 +42,12 @@ export class OracleLoadBalancerController implements IController {
   };
 
   public allVnets: INetwork[];
-  public allSubnets: ISubnet[];
+  public allSubnets: IOracleSubnet[];
   public filteredVnets: INetwork[];
   public filteredSubnets: ISubnet[];
   public selectedVnet: INetwork;
-  public selectedSubnet: ISubnet;
-  public existingLoadBalancerNames: string[];
+  public selectedSubnets: IOracleSubnet[];
+  public numSubnetsAllowed = 1;
 
   /*$scope,
   $uibModalInstance,
@@ -62,7 +63,7 @@ export class OracleLoadBalancerController implements IController {
     private $state: StateService,
     private oracleLoadBalancerTransformer: OracleLoadBalancerTransformer,
     private application: Application,
-    private loadBalancer: IOracleLoadBalancerUpsertCommand,
+    private loadBalancer: IOracleLoadBalancer,
     private isNew: boolean,
   ) {
     'ngInject';
@@ -77,7 +78,7 @@ export class OracleLoadBalancerController implements IController {
     this.$uibModalInstance.close();
     const newStateParams = {
       name: this.loadBalancer.name,
-      accountId: this.loadBalancer.credentials,
+      accountId: this.loadBalancer.account,
       region: this.loadBalancer.region,
       provider: 'oracle',
     };
@@ -107,15 +108,17 @@ export class OracleLoadBalancerController implements IController {
 
   public initializeController() {
     if (this.loadBalancer) {
-      this.loadBalancer = this.oracleLoadBalancerTransformer.convertLoadBalancerForEditing(this.loadBalancer);
+      this.$scope.loadBalancerCmd = this.oracleLoadBalancerTransformer.convertLoadBalancerForEditing(this.loadBalancer);
       if (this.isNew) {
         const nameParts = NameUtils.parseLoadBalancerName(this.loadBalancer.name);
-        this.loadBalancer.stack = nameParts.stack;
-        this.loadBalancer.detail = nameParts.freeFormDetails;
-        delete this.loadBalancer.name;
+        this.$scope.loadBalancerCmd.stack = nameParts.stack;
+        this.$scope.loadBalancerCmd.detail = nameParts.freeFormDetails;
+        delete this.$scope.loadBalancerCmd.name;
       }
     } else {
-      this.loadBalancer = this.oracleLoadBalancerTransformer.constructNewLoadBalancerTemplate(this.application);
+      this.$scope.loadBalancerCmd = this.oracleLoadBalancerTransformer.constructNewLoadBalancerTemplate(
+        this.application,
+      );
     }
     if (this.isNew) {
       this.updateName();
@@ -131,8 +134,8 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public updateLoadBalancerNames() {
-    const account = this.loadBalancer.credentials,
-      region = this.loadBalancer.region;
+    const account = this.$scope.loadBalancerCmd.credentials,
+      region = this.$scope.loadBalancerCmd.region;
 
     const accountLoadBalancerNamesByRegion: { [key: string]: string[] } = {};
     this.application
@@ -147,20 +150,23 @@ export class OracleLoadBalancerController implements IController {
           }
         });
 
-        this.existingLoadBalancerNames = accountLoadBalancerNamesByRegion[region] || [];
+        this.$scope.existingLoadBalancerNames = accountLoadBalancerNamesByRegion[region] || [];
       });
   }
 
   public requiresHealthCheckPath() {
-    return this.loadBalancer.probes[0].probeProtocol && this.loadBalancer.probes[0].probeProtocol.indexOf('HTTP') === 0;
+    return (
+      this.$scope.loadBalancerCmd.probes[0].probeProtocol &&
+      this.$scope.loadBalancerCmd.probes[0].probeProtocol.indexOf('HTTP') === 0
+    );
   }
 
   public updateName() {
-    this.loadBalancer.name = this.getName();
+    this.$scope.loadBalancerCmd.name = this.getName();
   }
 
   public getName() {
-    const elb = this.loadBalancer;
+    const elb = this.$scope.loadBalancerCmd;
     const elbName = [this.application.name, elb.stack || '', elb.detail || ''].join('-');
     return trimEnd(elbName, '-');
   }
@@ -176,7 +182,7 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public loadRegionsForAccount() {
-    AccountService.getRegionsForAccount(this.loadBalancer.credentials).then((regions: IRegion[]) => {
+    AccountService.getRegionsForAccount(this.$scope.loadBalancerCmd.credentials).then((regions: IRegion[]) => {
       this.$scope.regions = regions; // TODO desagar does this need to be in $scope?
     });
   }
@@ -189,14 +195,14 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public loadSubnets() {
-    SubnetReader.listSubnetsByProvider(this.oracle).then((subnets: ISubnet[]) => {
+    SubnetReader.listSubnetsByProvider(this.oracle).then((subnets: IOracleSubnet[]) => {
       this.allSubnets = subnets || [];
     });
   }
 
   public updateVnets() {
-    const account = this.loadBalancer.credentials;
-    const region = this.loadBalancer.region;
+    const account = this.$scope.loadBalancerCmd.credentials;
+    const region = this.$scope.loadBalancerCmd.region;
     this.filteredVnets = this.allVnets.filter((vnet: INetwork) => {
       return vnet.account === account && vnet.region === region;
     });
@@ -209,11 +215,11 @@ export class OracleLoadBalancerController implements IController {
   }
 
   /*public vnetUpdated() {
-    // const account = this.loadBalancer.credentials;
-    // const region = this.loadBalancer.region;
-    this.loadBalancer.selectedVnet = null;
-    this.loadBalancer.vnet = null;
-    this.loadBalancer.vnetResourceGroup = null;
+    // const account = this.$scope.loadBalancerCmd.credentials;
+    // const region = this.$scope.loadBalancerCmd.region;
+    this.$scope.loadBalancerCmd.selectedVnet = null;
+    this.$scope.loadBalancerCmd.vnet = null;
+    this.$scope.loadBalancerCmd.vnetResourceGroup = null;
     this.vnets = [];
     InfrastructureCaches.clearCache('networks');
 
@@ -232,89 +238,98 @@ export class OracleLoadBalancerController implements IController {
   }*/
 
   public updateSubnets(network: INetwork) {
-    this.selectedSubnet = null;
-    this.loadBalancer.subnetIds = [];
-    this.filteredSubnets = this.allSubnets.filter((subnet: ISubnet) => {
+    this.selectedSubnets = [];
+    this.$scope.loadBalancerCmd.subnetIds = [];
+    this.filteredSubnets = this.allSubnets.filter((subnet: IOracleSubnet) => {
       return subnet.vcnId === network.id;
     });
   }
   /*public subnetUpdated() {
     this.selectedSubnet = null;
-    this.loadBalancer.subnetIds = [];
+    this.$scope.loadBalancerCmd.subnetIds = [];
     this.subnets = [];
   }*/
 
   public selectedVnetChanged(network: INetwork) {
     this.selectedVnet = network;
-    this.loadBalancer.vpcId = network.id;
+    this.$scope.loadBalancerCmd.vpcId = network.id;
     this.updateSubnets(network);
-    /*this.loadBalancer.vnetResourceGroup = item.resourceGroup;*/
-    /*if (item.subnets) {
-      item.subnets.map((subnet) => {
-        const addSubnet = true;
-        if (subnet.devices) {
-          subnet.devices.map((device) => {
-            if (device && device.type !== 'applicationGateways') {
-              addSubnet = false;
-            }
-          });
-        }
-        if (addSubnet) {
-          this.selectedSubnets.push(subnet);
-        }
-      });
-    }*/
   }
 
-  public removeListener(index: number) {
-    this.loadBalancer.loadBalancingRules.splice(index, 1);
+  public isPrivateChanged() {
+    this.numSubnetsAllowed = this.$scope.loadBalancerCmd.isPrivate ? 1 : 2;
+  }
+
+  public listenerNameChanged() {
+    // Listener name has changed, which means that its key in the listener map will no longer match
+    // the listener name. Find any listener(s) whose name does not match their key in the
+    // map, and make the listener name the key for the listener(s)
+    const nameChangedKeys: string[] = Object.keys(this.$scope.loadBalancerCmd.listeners).filter(
+      key => key !== this.$scope.loadBalancerCmd.listeners[key].name,
+    );
+    nameChangedKeys.forEach(key => {
+      const listener: IOracleListener = this.$scope.loadBalancerCmd.listeners[key];
+      delete this.$scope.loadBalancerCmd.listeners[key];
+      this.$scope.loadBalancerCmd.listeners[listener.name] = listener;
+    });
+  }
+  public removeListener(name: string) {
+    delete this.$scope.loadBalancerCmd.listeners[name];
   }
 
   public addListener() {
-    this.loadBalancer.loadBalancingRules.push({ protocol: 'HTTP' });
+    const numListeners: number = Object.keys(this.$scope.loadBalancerCmd.listeners).length;
+    const newListener: IOracleListener = this.oracleLoadBalancerTransformer.constructNewListenerTemplate(
+      'listener' + (numListeners + 1),
+    );
+    this.$scope.loadBalancerCmd.listeners[newListener.name] = newListener;
   }
 
   public submit() {
     const descriptor = this.isNew ? 'Create' : 'Update';
 
-    this.taskMonitor.submit(function() {
+    this.taskMonitor.submit(() => {
       const params = {
         cloudProvider: 'oracle',
-        appName: this.application.name,
-        clusterName: this.loadBalancer.clusterName,
-        resourceGroupName: this.loadBalancer.clusterName,
-        loadBalancerName: this.loadBalancer.name,
+        application: this.application.name,
+        clusterName: this.$scope.loadBalancerCmd.clusterName,
+        resourceGroupName: this.$scope.loadBalancerCmd.clusterName,
+        loadBalancerName: this.$scope.loadBalancerCmd.name,
       };
 
-      if (this.loadBalancer.selectedVnet) {
-        this.loadBalancer.vnet = this.loadBalancer.selectedVnet.name;
-        this.loadBalancer.vnetResourceGroup = this.loadBalancer.selectedVnet.resourceGroup;
+      if (this.selectedVnet) {
+        this.$scope.loadBalancerCmd.vpcId = this.selectedVnet.id;
       }
 
-      if (this.loadBalancer.selectedSubnet) {
-        this.loadBalancer.subnet = this.loadBalancer.selectedSubnet.name;
+      if (this.selectedSubnets && this.selectedSubnets.length > 0) {
+        this.$scope.loadBalancerCmd.subnetIds = this.selectedSubnets.map((subnet: IOracleSubnet) => {
+          return subnet.id;
+        });
       }
 
-      this.loadBalancer.type = 'upsertLoadBalancer';
-      if (!this.loadBalancer.vnet && !this.loadBalancer.subnetType) {
-        this.loadBalancer.securityGroups = null;
+      // TODO desagar immediate!! have a listeners array in this object and directly populate
+      // in loadBalancerCmd at the end instead of this ugly re-doing. Also, validate uniqueness of listener names
+      // Should we also restrict protocol port to unique across listeners?
+      this.$scope.loadBalancerCmd.type = 'upsertLoadBalancer';
+      if (!this.$scope.loadBalancerCmd.vnet && !this.$scope.loadBalancerCmd.subnetType) {
+        this.$scope.loadBalancerCmd.securityGroups = null;
       }
 
-      /*const name = this.loadBalancer.clusterName || this.loadBalancer.name;
+      /*const name = this.$scope.loadBalancerCmd.clusterName || this.$scope.loadBalancerCmd.name;
       const probeName = name + '-probe';
       var ruleNameBase = name + '-rule';
-      this.loadBalancer.probes[0].probeName = probeName;
+      this.$scope.loadBalancerCmd.probes[0].probeName = probeName;
 
-      this.loadBalancer.loadBalancingRules.forEach((rule, index) => {
+      this.$scope.loadBalancerCmd.loadBalancingRules.forEach((rule, index) => {
         rule.ruleName = ruleNameBase + index;
         rule.probeName = probeName;
       });
 
-      if (this.loadBalancer.probes[0].probeProtocol === 'TCP') {
-        this.loadBalancer.probes[0].probePath = undefined;
+      if (this.$scope.loadBalancerCmd.probes[0].probeProtocol === 'TCP') {
+        this.$scope.loadBalancerCmd.probes[0].probePath = undefined;
       }*/
 
-      return LoadBalancerWriter.upsertLoadBalancer(this.loadBalancer, this.application, descriptor, params);
+      return LoadBalancerWriter.upsertLoadBalancer(this.$scope.loadBalancerCmd, this.application, descriptor, params);
     });
   }
 
@@ -328,252 +343,3 @@ module(ORACLE_LOAD_BALANCER_CREATE_CONTROLLER, [
   require('angular-ui-bootstrap'),
   ORACLE_LOAD_BALANCER_TRANSFORMER,
 ]).controller('oracleCreateLoadBalancerCtrl', OracleLoadBalancerController);
-
-/*
-module.exports = angular
-  .module('spinnaker.oracle.loadBalancer.create.controller', [
-    require('@uirouter/angularjs').default,
-    require('../loadBalancer.transformer').name,
-  ])
-  .controller('oracleCreateLoadBalancerCtrl', function(
-    $scope,
-    $uibModalInstance,
-    $state,
-    oracleLoadBalancerTransformer,
-    application,
-    loadBalancer,
-    isNew,
-  ) {
-    var ctrl = this;
-
-    $scope.pages = {
-      location: require('./createLoadBalancerProperties.html'),
-      listeners: require('./listeners.html'),
-      healthCheck: require('./healthCheck.html'),
-    };
-
-    $scope.isNew = isNew;
-
-    $scope.state = {
-      accountsLoaded: false,
-      submitting: false,
-    };
-
-    function onApplicationRefresh() {
-      // If the user has already closed the modal, do not navigate to the new details view
-      if ($scope.$$destroyed) {
-        return;
-      }
-      $uibModalInstance.close();
-      var newStateParams = {
-        name: $scope.loadBalancer.name,
-        accountId: $scope.loadBalancer.credentials,
-        region: $scope.loadBalancer.region,
-        provider: 'oracle',
-      };
-
-      if (!$state.includes('**.loadBalancerDetails')) {
-        $state.go('.loadBalancerDetails', newStateParams);
-      } else {
-        $state.go('^.loadBalancerDetails', newStateParams);
-      }
-    }
-
-    function onTaskComplete() {
-      application.loadBalancers.refresh();
-      application.loadBalancers.onNextRefresh($scope, onApplicationRefresh);
-    }
-
-    $scope.taskMonitor = new TaskMonitor({
-      application: application,
-      title: (isNew ? 'Creating ' : 'Updating ') + 'your load balancer',
-      modalInstance: $uibModalInstance,
-      onTaskComplete: onTaskComplete,
-    });
-
-    function initializeCreateMode() {
-      AccountService.listAccounts('oracle').then(function(accounts) {
-        $scope.accounts = accounts;
-        $scope.state.accountsLoaded = true;
-        ctrl.accountUpdated();
-      });
-    }
-
-    function initializeController() {
-      if (loadBalancer) {
-        $scope.loadBalancer = oracleLoadBalancerTransformer.convertLoadBalancerForEditing(loadBalancer);
-        if (isNew) {
-          var nameParts = NameUtils.parseLoadBalancerName($scope.loadBalancer.name);
-          $scope.loadBalancer.stack = nameParts.stack;
-          $scope.loadBalancer.detail = nameParts.freeFormDetails;
-          delete $scope.loadBalancer.name;
-        }
-      } else {
-        $scope.loadBalancer = oracleLoadBalancerTransformer.constructNewLoadBalancerTemplate(application);
-      }
-      if (isNew) {
-        updateLoadBalancerNames();
-        initializeCreateMode();
-      }
-    }
-
-    function updateLoadBalancerNames() {
-      var account = $scope.loadBalancer.credentials,
-        region = $scope.loadBalancer.region;
-
-      const accountLoadBalancersByRegion = {};
-      application
-        .getDataSource('loadBalancers')
-        .refresh(true)
-        .then(() => {
-          application.getDataSource('loadBalancers').data.forEach(loadBalancer => {
-            if (loadBalancer.account === account) {
-              accountLoadBalancersByRegion[loadBalancer.region] =
-                accountLoadBalancersByRegion[loadBalancer.region] || [];
-              accountLoadBalancersByRegion[loadBalancer.region].push(loadBalancer.name);
-            }
-          });
-
-          $scope.existingLoadBalancerNames = accountLoadBalancersByRegion[region] || [];
-        });
-    }
-
-    initializeController();
-
-    this.requiresHealthCheckPath = function() {
-      return (
-        $scope.loadBalancer.probes[0].probeProtocol && $scope.loadBalancer.probes[0].probeProtocol.indexOf('HTTP') === 0
-      );
-    };
-
-    this.updateName = function() {
-      $scope.loadBalancer.name = this.getName();
-    };
-
-    this.getName = function() {
-      var elb = $scope.loadBalancer;
-      const elbName = [application.name, elb.stack || '', elb.detail || ''].join('-');
-      return _.trimEnd(elbName, '-');
-    };
-
-    this.accountUpdated = function() {
-      AccountService.getRegionsForAccount($scope.loadBalancer.credentials).then(function(regions) {
-        $scope.regions = regions;
-        ctrl.regionUpdated();
-      });
-    };
-
-    this.regionUpdated = function() {
-      updateLoadBalancerNames();
-      ctrl.updateName();
-      ctrl.vnetUpdated();
-    };
-
-    this.vnetUpdated = function() {
-      var account = $scope.loadBalancer.credentials,
-        region = $scope.loadBalancer.region;
-      $scope.loadBalancer.selectedVnet = null;
-      $scope.loadBalancer.vnet = null;
-      $scope.loadBalancer.vnetResourceGroup = null;
-      ctrl.selectedVnets = [];
-      InfrastructureCaches.clearCache('networks');
-
-      NetworkReader.listNetworks().then(function(vnets) {
-        if (vnets.oracle) {
-          vnets.oracle.forEach(vnet => {
-            if (vnet.account === account && vnet.region === region) {
-              ctrl.selectedVnets.push(vnet);
-            }
-          });
-        }
-      });
-
-      ctrl.subnetUpdated();
-    };
-
-    this.subnetUpdated = function() {
-      $scope.loadBalancer.selectedSubnet = null;
-      $scope.loadBalancer.subnet = null;
-      ctrl.selectedSubnets = [];
-    };
-
-    this.selectedVnetChanged = function(item) {
-      $scope.loadBalancer.vnet = item.name;
-      $scope.loadBalancer.vnetResourceGroup = item.resourceGroup;
-      $scope.loadBalancer.selectedSubnet = null;
-      $scope.loadBalancer.subnet = null;
-      ctrl.selectedSubnets = [];
-      if (item.subnets) {
-        item.subnets.map(function(subnet) {
-          var addSubnet = true;
-          if (subnet.devices) {
-            subnet.devices.map(function(device) {
-              if (device && device.type !== 'applicationGateways') {
-                addSubnet = false;
-              }
-            });
-          }
-          if (addSubnet) {
-            ctrl.selectedSubnets.push(subnet);
-          }
-        });
-      }
-    };
-
-    this.removeListener = function(index) {
-      $scope.loadBalancer.loadBalancingRules.splice(index, 1);
-    };
-
-    this.addListener = function() {
-      $scope.loadBalancer.loadBalancingRules.push({ protocol: 'HTTP' });
-    };
-
-    this.submit = function() {
-      var descriptor = isNew ? 'Create' : 'Update';
-
-      $scope.taskMonitor.submit(function() {
-        let params = {
-          cloudProvider: 'oracle',
-          appName: application.name,
-          clusterName: $scope.loadBalancer.clusterName,
-          resourceGroupName: $scope.loadBalancer.clusterName,
-          loadBalancerName: $scope.loadBalancer.name,
-        };
-
-        if ($scope.loadBalancer.selectedVnet) {
-          $scope.loadBalancer.vnet = $scope.loadBalancer.selectedVnet.name;
-          $scope.loadBalancer.vnetResourceGroup = $scope.loadBalancer.selectedVnet.resourceGroup;
-        }
-
-        if ($scope.loadBalancer.selectedSubnet) {
-          $scope.loadBalancer.subnet = $scope.loadBalancer.selectedSubnet.name;
-        }
-
-        var name = $scope.loadBalancer.clusterName || $scope.loadBalancer.name;
-        var probeName = name + '-probe';
-        var ruleNameBase = name + '-rule';
-        $scope.loadBalancer.type = 'upsertLoadBalancer';
-        if (!$scope.loadBalancer.vnet && !$scope.loadBalancer.subnetType) {
-          $scope.loadBalancer.securityGroups = null;
-        }
-
-        $scope.loadBalancer.probes[0].probeName = probeName;
-
-        $scope.loadBalancer.loadBalancingRules.forEach((rule, index) => {
-          rule.ruleName = ruleNameBase + index;
-          rule.probeName = probeName;
-        });
-
-        if ($scope.loadBalancer.probes[0].probeProtocol === 'TCP') {
-          $scope.loadBalancer.probes[0].probePath = undefined;
-        }
-
-        return LoadBalancerWriter.upsertLoadBalancer($scope.loadBalancer, application, descriptor, params);
-      });
-    };
-
-    this.cancel = function() {
-      $uibModalInstance.dismiss();
-    };
-  });
-*/
