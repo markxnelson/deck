@@ -7,7 +7,7 @@
             <th>Name</th>
             <th>Protocol</th>
             <th>Port</th>
-            <th>Backend Set Name</th>
+            <th>Default Backend Set Name</th>
             <!-- TODO <th>SSL config</th>
             <th>Hostnames</th> -->
           </tr>
@@ -24,7 +24,7 @@
               <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required/>
             </td>
             <td>
-              <input class="form-control input-sm" ng-model="listener.backendSetName" required/>
+              <input class="form-control input-sm" ng-model="listener.defaultBackendSetName" required/>
             </td>
             <td><a href class="sm-label" ng-click="ctrl.removeListener(listener.name)"><span
               class="glyphicon glyphicon-trash"></span></a></td>

@@ -16,7 +16,13 @@ import {
 } from '@spinnaker/core';
 
 import { Application } from '../../../../core/src/application';
-import { IOracleListener, IOracleLoadBalancer, IOracleSubnet } from 'oracle/domain/IOracleLoadBalancer';
+import {
+  IOracleBackEndSet,
+  IOracleListener,
+  IOracleLoadBalancer,
+  IOracleSubnet,
+  LoadBalancingPolicy,
+} from 'oracle/domain/IOracleLoadBalancer';
 import {
   ORACLE_LOAD_BALANCER_TRANSFORMER,
   OracleLoadBalancerTransformer,
@@ -29,11 +35,13 @@ import { SubnetReader } from '../../../../core/src/subnet';
 export class OracleLoadBalancerController implements IController {
   public oracle = 'oracle';
   public shapes: string[] = ['100Mbps', '400Mbps', '8000Mbps']; // TODO desagar use listShapes to get this from clouddriver later
+  public loadBalancingPolicies: string[] = Object.keys(LoadBalancingPolicy).map(k => LoadBalancingPolicy[k as any]);
   public taskMonitor: any;
   public pages: { [key: string]: any } = {
     properties: require('./createLoadBalancerProperties.html'),
     listeners: require('./listeners.html'),
     healthCheck: require('./healthCheck.html'),
+    backendSets: require('./backendSets.html'),
   };
 
   public state: { [key: string]: boolean } = {
@@ -154,6 +162,7 @@ export class OracleLoadBalancerController implements IController {
       });
   }
 
+  // TODO REMOVE requiresHealthCheckPath
   public requiresHealthCheckPath() {
     return (
       this.$scope.loadBalancerCmd.probes[0].probeProtocol &&
@@ -261,6 +270,7 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public listenerNameChanged() {
+    // alignObjectKeysToProperty(this.$scope.loadBalancerCmd.listeners, 'name');
     // Listener name has changed, which means that its key in the listener map will no longer match
     // the listener name. Find any listener(s) whose name does not match their key in the
     // map, and make the listener name the key for the listener(s)
@@ -273,6 +283,25 @@ export class OracleLoadBalancerController implements IController {
       this.$scope.loadBalancerCmd.listeners[listener.name] = listener;
     });
   }
+
+  public backendSetNameChanged() {
+    // BackendSet name has changed, which means that its key in the backendSet map will no longer
+    // match the backendSet name. Find any backendSet(s) whose name does not match their key in the
+    // map, and make the backendSet name the key for the backendSet(s)
+    this.alignObjectKeysToProperty(this.$scope.loadBalancerCmd.backendSets, 'name');
+  }
+
+  private alignObjectKeysToProperty(objectToAlign: { [key: string]: any }, propertyName: string) {
+    const propChangedKeys: string[] = Object.keys(objectToAlign).filter(
+      key => key !== objectToAlign[key][propertyName],
+    );
+    propChangedKeys.forEach(key => {
+      const valueForKey: any = objectToAlign[key];
+      const newKey: string = valueForKey[propertyName];
+      delete objectToAlign[key];
+      objectToAlign[newKey] = valueForKey;
+    });
+  }
   public removeListener(name: string) {
     delete this.$scope.loadBalancerCmd.listeners[name];
   }
@@ -283,6 +312,18 @@ export class OracleLoadBalancerController implements IController {
       'listener' + (numListeners + 1),
     );
     this.$scope.loadBalancerCmd.listeners[newListener.name] = newListener;
+  }
+
+  public removeBackendSet(name: string) {
+    delete this.$scope.loadBalancerCmd.backendSets[name];
+  }
+
+  public addBackendSet() {
+    const numBackendSets: number = Object.keys(this.$scope.loadBalancerCmd.backendSets).length;
+    const newBackendSet: IOracleBackEndSet = this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate(
+      'backendSet' + (numBackendSets + 1),
+    );
+    this.$scope.loadBalancerCmd.backendSets[newBackendSet.name] = newBackendSet;
   }
 
   public submit() {
@@ -314,20 +355,6 @@ export class OracleLoadBalancerController implements IController {
       if (!this.$scope.loadBalancerCmd.vnet && !this.$scope.loadBalancerCmd.subnetType) {
         this.$scope.loadBalancerCmd.securityGroups = null;
       }
-
-      /*const name = this.$scope.loadBalancerCmd.clusterName || this.$scope.loadBalancerCmd.name;
-      const probeName = name + '-probe';
-      var ruleNameBase = name + '-rule';
-      this.$scope.loadBalancerCmd.probes[0].probeName = probeName;
-
-      this.$scope.loadBalancerCmd.loadBalancingRules.forEach((rule, index) => {
-        rule.ruleName = ruleNameBase + index;
-        rule.probeName = probeName;
-      });
-
-      if (this.$scope.loadBalancerCmd.probes[0].probeProtocol === 'TCP') {
-        this.$scope.loadBalancerCmd.probes[0].probePath = undefined;
-      }*/
 
       return LoadBalancerWriter.upsertLoadBalancer(this.$scope.loadBalancerCmd, this.application, descriptor, params);
     });
