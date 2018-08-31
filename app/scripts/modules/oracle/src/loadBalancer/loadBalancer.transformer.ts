@@ -4,7 +4,11 @@ import { module, IPromise } from 'angular';
 
 import { OracleProviderSettings } from '../oracle.settings';
 import { Application } from '../../../core/src/application';
-import { IOracleLoadBalancer, IOracleLoadBalancerUpsertCommand } from 'oracle/domain/IOracleLoadBalancer';
+import {
+  IOracleListener,
+  IOracleLoadBalancer,
+  IOracleLoadBalancerUpsertCommand,
+} from 'oracle/domain/IOracleLoadBalancer';
 import { $q } from 'ngimport';
 
 export class OracleLoadBalancerTransformer {
@@ -45,7 +49,10 @@ export class OracleLoadBalancerTransformer {
       shape: loadBalancer.shape,
       isPrivate: loadBalancer.isPrivate,
       subnetIds: loadBalancer.subnetIds,
-      listeners: loadBalancer.listeners,
+      listeners: loadBalancer.listeners.reduce((result: { [name: string]: IOracleListener }, item: IOracleListener) => {
+        result[item.name] = item;
+        return result;
+      }, {}),
       hostnames: loadBalancer.hostnames,
       backendSets: loadBalancer.backendSets,
       freeformTags: loadBalancer.freeformTags,
@@ -67,7 +74,7 @@ export class OracleLoadBalancerTransformer {
       shape: null,
       isPrivate: false,
       subnetIds: [],
-      listeners: [],
+      listeners: {},
       hostnames: [],
       backendSets: [],
       freeformTags: {},
@@ -75,6 +82,10 @@ export class OracleLoadBalancerTransformer {
       securityGroups: [],
       vpcId: null,
     };
+  }
+
+  public constructNewListenerTemplate(name: string): IOracleListener {
+    return { name: name, port: 80, protocol: 'HTTP', defaultBackendSetName: undefined };
   }
 }
 
