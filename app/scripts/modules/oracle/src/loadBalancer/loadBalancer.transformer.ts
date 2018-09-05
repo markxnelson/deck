@@ -92,15 +92,15 @@ export class OracleLoadBalancerTransformer {
     };
   }
 
-  public constructNewListenerTemplate(name: string): IOracleListener {
-    return { name: name, port: 80, protocol: 'HTTP', defaultBackendSetName: undefined };
+  public constructNewListenerTemplate(): IOracleListener {
+    return { name: 'HTTP_80', port: 80, protocol: 'HTTP', defaultBackendSetName: undefined };
   }
 
   public constructNewBackendSetTemplate(name: string): IOracleBackEndSet {
     return {
       name: name,
       policy: LoadBalancingPolicy.ROUND_ROBIN,
-      healthChecker: { urlPath: '/healthZ' },
+      healthChecker: { protocol: 'HTTP', port: 80, urlPath: '/healthZ' },
     };
   }
 }

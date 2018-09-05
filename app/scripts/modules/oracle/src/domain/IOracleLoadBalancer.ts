@@ -67,8 +67,8 @@ export interface IOracleListenerCertificate {
 
 export interface IOracleBackendSetHealthCheck {
   urlPath: string; // required
-  protocol?: 'HTTP' | 'TCP';
-  port?: number;
+  protocol: 'HTTP' | 'TCP';
+  port: number;
   intervalMillis?: number;
   timeoutMillis?: number;
   retries?: number;

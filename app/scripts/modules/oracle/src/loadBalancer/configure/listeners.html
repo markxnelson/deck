@@ -13,18 +13,25 @@
           </tr>
         </thead>
         <tbody>
-          <tr ng-repeat="(name, listener) in loadBalancerCmd.listeners">
+          <tr ng-repeat="listener in ctrl.listeners">
             <td>
-              <input class="form-control input-sm" ng-model="listener.name" required ng-blur="ctrl.listenerNameChanged()"/>
+              <span>{{listener.name}}</span>
+              <!-- <input class="form-control input-sm" ng-model="listener.name" required ng-blur="ctrl.listenerNameChanged()"/> -->
             </td>
             <td>
-              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']"></select>
+              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']" on-select="ctrl.updateListenerName(listener.name)"></select>
             </td>
             <td>
-              <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required/>
+              <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required ng-blur="ctrl.updateListenerName(listener.name)"/>
             </td>
             <td>
-              <input class="form-control input-sm" ng-model="listener.defaultBackendSetName" required/>
+              <ui-select class="form-control input-sm" required ng-model="listener.defaultBackendSetName">
+                <ui-select-match placeholder="Select default backend set name">{{$select.selected.name}}</ui-select-match>
+                <ui-select-choices repeat="backendSet.name as backendSet in ctrl.backendSets | filter: $select.search">
+                  <span ng-bind-html="backendSet.name | highlight: $select.search"></span>
+                </ui-select-choices>
+              </ui-select>
+              <!-- <select class="form-control input-sm" required ng-model="listener.defaultBackendSetName" ng-options="backendSetName as backendSet.name for backendSet in loadBalancerCmd.backendSets"></select> -->
             </td>
             <td><a href class="sm-label" ng-click="ctrl.removeListener(listener.name)"><span
               class="glyphicon glyphicon-trash"></span></a></td>
