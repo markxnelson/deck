@@ -6,17 +6,25 @@
           <tr>
             <th>Name</th>
             <th>Policy</th>
+            <th>Health Check Protocol</th>
+            <th>Health Check Port</th>
             <th>Health Check Path</th>
             <!-- TODO other nonrequired health check fields - do we need another popup for health check? -->
           </tr>
         </thead>
         <tbody>
-          <tr ng-repeat="(name, backendSet) in loadBalancerCmd.backendSets">
+          <tr ng-repeat="backendSet in ctrl.backendSets">
             <td>
-              <input class="form-control input-sm" ng-model="backendSet.name" required ng-blur="ctrl.backendSetNameChanged()"/>
+              <input class="form-control input-sm" ng-model="backendSet.name" required/>
             </td>
             <td>
               <select class="form-control input-sm" ng-model="backendSet.policy" ng-options="policy for policy in ctrl.loadBalancingPolicies"></select>
+            </td>
+            <td>
+              <input class="form-control input-sm" ng-model="backendSet.healthChecker.protocol" required/>
+            </td>
+            <td>
+              <input class="form-control input-sm" ng-model="backendSet.healthChecker.port" required/>
             </td>
             <td>
               <input class="form-control input-sm" ng-model="backendSet.healthChecker.urlPath" required/>
