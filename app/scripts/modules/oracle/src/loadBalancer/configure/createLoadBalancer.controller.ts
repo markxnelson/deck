@@ -56,6 +56,8 @@ export class OracleLoadBalancerController implements IController {
   public selectedVnet: INetwork;
   public selectedSubnets: IOracleSubnet[];
   public numSubnetsAllowed = 1;
+  public listeners: IOracleListener[] = [];
+  public backendSets: IOracleBackEndSet[] = [];
 
   /*$scope,
   $uibModalInstance,
@@ -269,61 +271,26 @@ export class OracleLoadBalancerController implements IController {
     this.numSubnetsAllowed = this.$scope.loadBalancerCmd.isPrivate ? 1 : 2;
   }
 
-  public listenerNameChanged() {
-    // alignObjectKeysToProperty(this.$scope.loadBalancerCmd.listeners, 'name');
-    // Listener name has changed, which means that its key in the listener map will no longer match
-    // the listener name. Find any listener(s) whose name does not match their key in the
-    // map, and make the listener name the key for the listener(s)
-    const nameChangedKeys: string[] = Object.keys(this.$scope.loadBalancerCmd.listeners).filter(
-      key => key !== this.$scope.loadBalancerCmd.listeners[key].name,
-    );
-    nameChangedKeys.forEach(key => {
-      const listener: IOracleListener = this.$scope.loadBalancerCmd.listeners[key];
-      delete this.$scope.loadBalancerCmd.listeners[key];
-      this.$scope.loadBalancerCmd.listeners[listener.name] = listener;
-    });
+  public updateListenerName(listenerName: string) {
+    const listener: IOracleListener = this.listeners.find((lis: IOracleListener) => lis.name === listenerName);
+    listener.name = listener.protocol + '_' + listener.port;
   }
 
-  public backendSetNameChanged() {
-    // BackendSet name has changed, which means that its key in the backendSet map will no longer
-    // match the backendSet name. Find any backendSet(s) whose name does not match their key in the
-    // map, and make the backendSet name the key for the backendSet(s)
-    this.alignObjectKeysToProperty(this.$scope.loadBalancerCmd.backendSets, 'name');
-  }
-
-  private alignObjectKeysToProperty(objectToAlign: { [key: string]: any }, propertyName: string) {
-    const propChangedKeys: string[] = Object.keys(objectToAlign).filter(
-      key => key !== objectToAlign[key][propertyName],
-    );
-    propChangedKeys.forEach(key => {
-      const valueForKey: any = objectToAlign[key];
-      const newKey: string = valueForKey[propertyName];
-      delete objectToAlign[key];
-      objectToAlign[newKey] = valueForKey;
-    });
-  }
   public removeListener(name: string) {
-    delete this.$scope.loadBalancerCmd.listeners[name];
+    this.listeners = this.listeners.filter((lis: IOracleListener) => lis.name !== name);
   }
 
   public addListener() {
-    const numListeners: number = Object.keys(this.$scope.loadBalancerCmd.listeners).length;
-    const newListener: IOracleListener = this.oracleLoadBalancerTransformer.constructNewListenerTemplate(
-      'listener' + (numListeners + 1),
-    );
-    this.$scope.loadBalancerCmd.listeners[newListener.name] = newListener;
+    this.listeners.push(this.oracleLoadBalancerTransformer.constructNewListenerTemplate());
   }
 
   public removeBackendSet(name: string) {
-    delete this.$scope.loadBalancerCmd.backendSets[name];
+    this.backendSets = this.backendSets.filter((bset: IOracleBackEndSet) => bset.name !== name);
   }
 
   public addBackendSet() {
-    const numBackendSets: number = Object.keys(this.$scope.loadBalancerCmd.backendSets).length;
-    const newBackendSet: IOracleBackEndSet = this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate(
-      'backendSet' + (numBackendSets + 1),
-    );
-    this.$scope.loadBalancerCmd.backendSets[newBackendSet.name] = newBackendSet;
+    const nameSuffix: number = this.backendSets.length + 1;
+    this.backendSets.push(this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate('backendSet' + nameSuffix));
   }
 
   public submit() {
@@ -346,6 +313,26 @@ export class OracleLoadBalancerController implements IController {
         this.$scope.loadBalancerCmd.subnetIds = this.selectedSubnets.map((subnet: IOracleSubnet) => {
           return subnet.id;
         });
+      }
+
+      if (this.backendSets.length > 0) {
+        this.$scope.loadBalancerCmd.backendSets = this.backendSets.reduce(
+          (backendSetsMap: { [name: string]: IOracleBackEndSet }, backendSet: IOracleBackEndSet) => {
+            backendSetsMap[backendSet.name] = backendSet;
+            return backendSetsMap;
+          },
+          {},
+        );
+      }
+
+      if (this.listeners.length > 0) {
+        this.$scope.loadBalancerCmd.listeners = this.listeners.reduce(
+          (listenersMap: { [name: string]: IOracleListener }, listener: IOracleListener) => {
+            listenersMap[listener.name] = listener;
+            return listenersMap;
+          },
+          {},
+        );
       }
 
       // TODO desagar immediate!! have a listeners array in this object and directly populate
