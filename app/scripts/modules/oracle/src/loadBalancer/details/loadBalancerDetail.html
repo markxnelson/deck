@@ -50,9 +50,9 @@
         <dt>In</dt>
         <dd><account-tag account="loadBalancer.account" pad="right" provider="loadBalancer.type"></account-tag> {{loadBalancer.region}}</dd>
         <dt>VNet</dt>
-        <dd>{{loadBalancer.elb.vnet}}</dd>
+        <dd>{{loadBalancer.name}}'s VCN</dd>
         <dt>Subnet</dt>
-        <dd>{{loadBalancer.elb.subnet}}</dd>
+        <dd>{{loadBalancer.name}}'s subnet</dd>
       </dl>
       <dl class="horizontal-when-filters-collapsed">
         <dt ng-if="loadBalancer.serverGroups">Server Groups</dt>
@@ -84,11 +84,26 @@
     <collapsible-section heading="Status" expanded="true">
       <health-counts class="pull-left" container="loadBalancer.instanceCounts"></health-counts>
     </collapsible-section>
+    <collapsible-section heading="Backend Sets">
+      <dd ng-repeat="backendSet in loadBalancer.backendSets">
+        {{backendSet.name}} {{backendSet.policy}} Health Check URL: {{backendSet.healthChecker.urlPath}}
+      </dd>
+      <dl class="horizontal-when-filters-collapsed">
+        <dt>Target</dt>
+        <dd>{{loadBalancer.elb.probes[0].probeProtocol}}</dd>
+        <dt>Interval</dt>
+        <dd>{{loadBalancer.elb.probes[0].probeInterval}} seconds</dd>
+        <dt>Unhealthy Threshold</dt>
+        <dd>{{loadBalancer.elb.probes[0].unhealthyThreshold}}</dd>
+        <dt>Timeout</dt>
+        <dd>{{loadBalancer.elb.probes[0].timeout}} seconds</dd>
+      </dl>
+    </collapsible-section>
     <collapsible-section heading="Listeners">
       <dl>
-        <dt>Load Balancer &rarr; Instance</dt>
-        <dd ng-repeat="loadBalancingRule in loadBalancer.elb.loadBalancingRules">
-          {{loadBalancingRule.protocol}}:{{loadBalancingRule.externalPort}} &rarr; {{loadBalancingRule.backendPort}}
+        <dt>Listener &rarr; Backend Set</dt>
+        <dd ng-repeat="listener in loadBalancer.listeners">
+          {{listener.name}} {{listener.protocol}}:{{listener.port}} &rarr; {{listener.defaultBackendSetName}}
         </dd>
       </dl>
     </collapsible-section>
@@ -100,18 +115,6 @@
           </a>
         </li>
       </ul>
-    </collapsible-section>
-    <collapsible-section heading="Health Checks">
-      <dl class="horizontal-when-filters-collapsed">
-        <dt>Target</dt>
-        <dd>{{loadBalancer.elb.probes[0].probeProtocol}}</dd>
-        <dt>Interval</dt>
-        <dd>{{loadBalancer.elb.probes[0].probeInterval}} seconds</dd>
-        <dt>Unhealthy Threshold</dt>
-        <dd>{{loadBalancer.elb.probes[0].unhealthyThreshold}}</dd>
-        <dt>Timeout</dt>
-        <dd>{{loadBalancer.elb.probes[0].timeout}} seconds</dd>
-      </dl>
     </collapsible-section>
   </div>
 </div>

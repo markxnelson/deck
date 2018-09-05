@@ -47,7 +47,7 @@ module.exports = angular
 
       if ($scope.loadBalancer) {
         var detailsLoader = loadBalancerReader.getLoadBalancerDetails(
-          $scope.loadBalancer.provider,
+          $scope.loadBalancer.cloudProvider,
           loadBalancer.accountId,
           loadBalancer.region,
           loadBalancer.name,
