@@ -172,6 +172,50 @@ export class OracleLoadBalancerController implements IController {
     );
   }
 
+  public validateBeforeSubmit() {
+    return this.propertiesValid() && this.listenersValid();
+  }
+  /**
+   * Used to prevent form submission if listeners are invalid
+   * Currently it calls the two validations applicable to listeners.
+   * @returns {boolean}
+   */
+  public listenersValid() {
+    return this.listenersUniqueProtocolPort() && this.listenersBackendSetsExist();
+  }
+
+  /**
+   * Used to prevent form submission if the properties section is invalid
+   * Current the only validation is for subnet count.
+   */
+  public propertiesValid() {
+    return this.selectedSubnets.length === this.calcNumSubnetsAllowed();
+  }
+
+  public listenersUniqueProtocolPort() {
+    // validate that listeners have unique protocol/port combination
+    const countsMap: { [key: string]: number } = {};
+    this.listeners.reduce((counts, listener) => {
+      const protocolPort = listener.protocol + '_' + listener.port;
+      counts[protocolPort] = counts[protocolPort] ? counts[protocolPort] + 1 : 1;
+      return counts;
+    }, countsMap);
+    // There should be no protocol/port combo in the countsMap with a count > 1
+    return (
+      Object.keys(countsMap).filter(key => {
+        return countsMap[key] > 1;
+      }).length === 0
+    );
+  }
+
+  public listenersBackendSetsExist() {
+    // validate that the listeners' selected backend sets must exist. This is needed because Angular
+    // does not clear the selected backendSet from the drop down if the backend set is deleted.
+    const listenersWithNonExistentBackendSet: IOracleListener[] = this.listeners.filter(
+      listener => !this.backendSets.find(backendSet => backendSet.name === listener.defaultBackendSetName),
+    );
+    return listenersWithNonExistentBackendSet.length === 0;
+  }
   public updateName() {
     this.$scope.loadBalancerCmd.name = this.getName();
   }
@@ -217,36 +261,7 @@ export class OracleLoadBalancerController implements IController {
     this.filteredVnets = this.allVnets.filter((vnet: INetwork) => {
       return vnet.account === account && vnet.region === region;
     });
-
-    /*this.allVnets.forEach((vnet: INetwork) => {
-      if (vnet.account === account && vnet.region === region) {
-        this.filteredVnets.push(vnet);
-      }
-    });*/
   }
-
-  /*public vnetUpdated() {
-    // const account = this.$scope.loadBalancerCmd.credentials;
-    // const region = this.$scope.loadBalancerCmd.region;
-    this.$scope.loadBalancerCmd.selectedVnet = null;
-    this.$scope.loadBalancerCmd.vnet = null;
-    this.$scope.loadBalancerCmd.vnetResourceGroup = null;
-    this.vnets = [];
-    InfrastructureCaches.clearCache('networks');
-
-    NetworkReader.listNetworks().then(
-      (vnets: any) => {
-        if (vnets.oracle) {
-          vnets.oracle.forEach((vnet: INetwork) => {
-            if (vnet.account === account && vnet.region === region) {
-              this.selectedVnets.push(vnet);
-            }
-          });
-        }
-      });
-
-    this.subnetUpdated();
-  }*/
 
   public updateSubnets(network: INetwork) {
     this.selectedSubnets = [];
@@ -255,11 +270,6 @@ export class OracleLoadBalancerController implements IController {
       return subnet.vcnId === network.id;
     });
   }
-  /*public subnetUpdated() {
-    this.selectedSubnet = null;
-    this.$scope.loadBalancerCmd.subnetIds = [];
-    this.subnets = [];
-  }*/
 
   public selectedVnetChanged(network: INetwork) {
     this.selectedVnet = network;
@@ -268,12 +278,11 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public isPrivateChanged() {
-    this.numSubnetsAllowed = this.$scope.loadBalancerCmd.isPrivate ? 1 : 2;
+    this.numSubnetsAllowed = this.calcNumSubnetsAllowed();
   }
 
-  public updateListenerName(listenerName: string) {
-    const listener: IOracleListener = this.listeners.find((lis: IOracleListener) => lis.name === listenerName);
-    listener.name = listener.protocol + '_' + listener.port;
+  public calcNumSubnetsAllowed() {
+    return this.$scope.loadBalancerCmd.isPrivate ? 1 : 2;
   }
 
   public removeListener(name: string) {
@@ -286,6 +295,12 @@ export class OracleLoadBalancerController implements IController {
 
   public removeBackendSet(name: string) {
     this.backendSets = this.backendSets.filter((bset: IOracleBackEndSet) => bset.name !== name);
+    // Also clear the defaultBackendSetName field of any listeners who are using this backendSet
+    this.listeners.forEach(lis => {
+      if (lis.defaultBackendSetName === name) {
+        lis.defaultBackendSetName = undefined;
+      }
+    });
   }
 
   public addBackendSet() {
@@ -328,6 +343,7 @@ export class OracleLoadBalancerController implements IController {
       if (this.listeners.length > 0) {
         this.$scope.loadBalancerCmd.listeners = this.listeners.reduce(
           (listenersMap: { [name: string]: IOracleListener }, listener: IOracleListener) => {
+            listener.name = listener.protocol + '_' + listener.port;
             listenersMap[listener.name] = listener;
             return listenersMap;
           },
