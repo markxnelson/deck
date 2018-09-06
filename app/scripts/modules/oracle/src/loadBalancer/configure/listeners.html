@@ -4,7 +4,6 @@
       <table class="table table-condensed packed">
         <thead>
           <tr>
-            <th>Name</th>
             <th>Protocol</th>
             <th>Port</th>
             <th>Default Backend Set Name</th>
@@ -15,14 +14,10 @@
         <tbody>
           <tr ng-repeat="listener in ctrl.listeners">
             <td>
-              <span>{{listener.name}}</span>
-              <!-- <input class="form-control input-sm" ng-model="listener.name" required ng-blur="ctrl.listenerNameChanged()"/> -->
+              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']"></select>
             </td>
             <td>
-              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']" on-select="ctrl.updateListenerName(listener.name)"></select>
-            </td>
-            <td>
-              <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required ng-blur="ctrl.updateListenerName(listener.name)"/>
+              <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required/>
             </td>
             <td>
               <ui-select class="form-control input-sm" required ng-model="listener.defaultBackendSetName">
@@ -35,6 +30,11 @@
             </td>
             <td><a href class="sm-label" ng-click="ctrl.removeListener(listener.name)"><span
               class="glyphicon glyphicon-trash"></span></a></td>
+          </tr>
+          <tr ng-if="!ctrl.listenersUniqueProtocolPort()">
+            <td colspan="3">
+              <validation-error message="Listeners must have unique protocol and port"></validation-error>
+            </td>
           </tr>
         </tbody>
         <tfoot>
