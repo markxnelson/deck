@@ -15,7 +15,9 @@
         <tbody>
           <tr ng-repeat="backendSet in ctrl.backendSets">
             <td>
-              <input class="form-control input-sm" ng-model="backendSet.name" required/>
+              <input class="form-control input-sm" ng-model="backendSet.name" required
+                     ng-focus="prevBackendSetNames[$index] = backendSet.name"
+                     ng-blur="ctrl.backendSetNameChanged($index)"/>
             </td>
             <td>
               <select class="form-control input-sm" ng-model="backendSet.policy" ng-options="policy for policy in ctrl.loadBalancingPolicies"></select>
