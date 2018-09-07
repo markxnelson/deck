@@ -130,6 +130,7 @@ export class OracleLoadBalancerController implements IController {
         this.application,
       );
     }
+    this.$scope.prevBackendSetNames = [];
     if (this.isNew) {
       this.updateName();
       this.updateLoadBalancerNames();
@@ -301,11 +302,25 @@ export class OracleLoadBalancerController implements IController {
         lis.defaultBackendSetName = undefined;
       }
     });
+    const idxPrevNames: number = this.$scope.prevBackendSetNames.find((prevName: string) => {
+      return name === prevName;
+    });
+    this.$scope.prevBackendSetNames.splice(idxPrevNames, 1);
   }
 
   public addBackendSet() {
     const nameSuffix: number = this.backendSets.length + 1;
+    this.$scope.prevBackendSetNames.push('');
     this.backendSets.push(this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate('backendSet' + nameSuffix));
+  }
+
+  public backendSetNameChanged(idx: number) {
+    const prevName = this.$scope.prevBackendSetNames && this.$scope.prevBackendSetNames[idx];
+    if (prevName) {
+      this.listeners.filter(lis => lis.defaultBackendSetName === prevName).forEach(lis => {
+        lis.defaultBackendSetName = this.backendSets[idx].name;
+      });
+    }
   }
 
   public submit() {
