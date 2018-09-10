@@ -190,7 +190,7 @@ export class OracleLoadBalancerController implements IController {
    * Current the only validation is for subnet count.
    */
   public propertiesValid() {
-    return this.selectedSubnets.length === this.calcNumSubnetsAllowed();
+    return this.selectedSubnets && this.selectedSubnets.length === this.calcNumSubnetsAllowed();
   }
 
   public listenersUniqueProtocolPort() {
