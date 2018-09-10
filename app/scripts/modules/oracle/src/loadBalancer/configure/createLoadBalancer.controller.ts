@@ -136,7 +136,7 @@ export class OracleLoadBalancerController implements IController {
       this.updateLoadBalancerNames();
       this.initializeCreateMode();
     }
-    this.taskMonitor = new TaskMonitor({
+    this.$scope.taskMonitor = new TaskMonitor({
       application: this.application,
       title: (this.isNew ? 'Creating ' : 'Updating ') + 'your load balancer',
       modalInstance: this.$uibModalInstance,
@@ -326,7 +326,7 @@ export class OracleLoadBalancerController implements IController {
   public submit() {
     const descriptor = this.isNew ? 'Create' : 'Update';
 
-    this.taskMonitor.submit(() => {
+    this.$scope.taskMonitor.submit(() => {
       const params = {
         cloudProvider: 'oracle',
         application: this.application.name,
