@@ -116,9 +116,24 @@ export class OracleLoadBalancerController implements IController {
     this.loadSubnets();
   }
 
+  private initControllerFromLoadBalancerCmd() {
+    this.numSubnetsAllowed = this.calcNumSubnetsAllowed();
+    if (this.$scope.loadBalancerCmd.listeners) {
+      Object.keys(this.$scope.loadBalancerCmd.listeners).forEach(lis => {
+        this.listeners.push(this.$scope.loadBalancerCmd.listeners[lis]);
+      });
+    }
+    if (this.$scope.loadBalancerCmd.backendSets) {
+      Object.keys(this.$scope.loadBalancerCmd.backendSets).forEach(b => {
+        this.backendSets.push(this.$scope.loadBalancerCmd.backendSets[b]);
+      });
+    }
+  }
+
   public initializeController() {
     if (this.loadBalancer) {
       this.$scope.loadBalancerCmd = this.oracleLoadBalancerTransformer.convertLoadBalancerForEditing(this.loadBalancer);
+      this.initControllerFromLoadBalancerCmd();
       if (this.isNew) {
         const nameParts = NameUtils.parseLoadBalancerName(this.loadBalancer.name);
         this.$scope.loadBalancerCmd.stack = nameParts.stack;
@@ -165,17 +180,10 @@ export class OracleLoadBalancerController implements IController {
       });
   }
 
-  // TODO REMOVE requiresHealthCheckPath
-  public requiresHealthCheckPath() {
-    return (
-      this.$scope.loadBalancerCmd.probes[0].probeProtocol &&
-      this.$scope.loadBalancerCmd.probes[0].probeProtocol.indexOf('HTTP') === 0
-    );
-  }
-
   public validateBeforeSubmit() {
     return this.propertiesValid() && this.listenersValid();
   }
+
   /**
    * Used to prevent form submission if listeners are invalid
    * Currently it calls the two validations applicable to listeners.
@@ -222,9 +230,9 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public getName() {
-    const elb = this.$scope.loadBalancerCmd;
-    const elbName = [this.application.name, elb.stack || '', elb.detail || ''].join('-');
-    return trimEnd(elbName, '-');
+    const lb = this.$scope.loadBalancerCmd;
+    const lbName = [this.application.name, lb.stack || '', lb.detail || ''].join('-');
+    return trimEnd(lbName, '-');
   }
 
   public accountUpdated() {
@@ -282,30 +290,32 @@ export class OracleLoadBalancerController implements IController {
     this.numSubnetsAllowed = this.calcNumSubnetsAllowed();
   }
 
+  public listenerIsSslChanged(listener: IOracleListener) {
+    listener.sslConfiguration = this.oracleLoadBalancerTransformer.constructNewSSLConfiguration();
+  }
+
   public calcNumSubnetsAllowed() {
     return this.$scope.loadBalancerCmd.isPrivate ? 1 : 2;
   }
 
-  public removeListener(name: string) {
-    this.listeners = this.listeners.filter((lis: IOracleListener) => lis.name !== name);
+  public removeListener(idx: number) {
+    this.listeners.splice(idx, 1);
   }
 
   public addListener() {
     this.listeners.push(this.oracleLoadBalancerTransformer.constructNewListenerTemplate());
   }
 
-  public removeBackendSet(name: string) {
-    this.backendSets = this.backendSets.filter((bset: IOracleBackEndSet) => bset.name !== name);
+  public removeBackendSet(idx: number) {
+    const backendSet = this.backendSets[idx];
+    this.backendSets.splice(idx, 1);
+    this.$scope.prevBackendSetNames.splice(idx, 1);
     // Also clear the defaultBackendSetName field of any listeners who are using this backendSet
     this.listeners.forEach(lis => {
-      if (lis.defaultBackendSetName === name) {
+      if (lis.defaultBackendSetName === backendSet.name) {
         lis.defaultBackendSetName = undefined;
       }
     });
-    const idxPrevNames: number = this.$scope.prevBackendSetNames.find((prevName: string) => {
-      return name === prevName;
-    });
-    this.$scope.prevBackendSetNames.splice(idxPrevNames, 1);
   }
 
   public addBackendSet() {

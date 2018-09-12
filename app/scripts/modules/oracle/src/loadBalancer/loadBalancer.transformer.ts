@@ -43,6 +43,12 @@ export class OracleLoadBalancerTransformer {
 
   public convertLoadBalancerForEditing(loadBalancer: IOracleLoadBalancer): IOracleLoadBalancerUpsertCommand {
     // const applicationName = NameUtils.parseLoadBalancerName(loadBalancer.name).application;
+    if (loadBalancer.listeners) {
+      Object.keys(loadBalancer.listeners).forEach(key => {
+        const lis = loadBalancer.listeners[key];
+        lis.isSsl = !!lis.sslConfiguration; // use !! operator to get truthiness value
+      });
+    }
     const toEdit: IOracleLoadBalancerUpsertCommand = {
       name: loadBalancer.name,
       cloudProvider: loadBalancer.cloudProvider,
@@ -50,19 +56,10 @@ export class OracleLoadBalancerTransformer {
       region: loadBalancer.region,
       shape: loadBalancer.shape,
       isPrivate: loadBalancer.isPrivate,
-      subnetIds: loadBalancer.subnetIds,
-      listeners: loadBalancer.listeners.reduce((result: { [name: string]: IOracleListener }, item: IOracleListener) => {
-        result[item.name] = item;
-        return result;
-      }, {}),
+      subnetIds: loadBalancer.subnets.map(subnet => subnet.id),
+      listeners: loadBalancer.listeners,
       hostnames: loadBalancer.hostnames,
-      backendSets: loadBalancer.backendSets.reduce(
-        (result: { [name: string]: IOracleBackEndSet }, item: IOracleBackEndSet) => {
-          result[item.name] = item;
-          return result;
-        },
-        {},
-      ),
+      backendSets: loadBalancer.backendSets,
       freeformTags: loadBalancer.freeformTags,
       loadBalancerType: loadBalancer.type,
       securityGroups: loadBalancer.securityGroups,
@@ -93,7 +90,13 @@ export class OracleLoadBalancerTransformer {
   }
 
   public constructNewListenerTemplate(): IOracleListener {
-    return { name: 'HTTP_80', port: 80, protocol: 'HTTP', defaultBackendSetName: undefined };
+    return {
+      name: 'HTTP_80',
+      port: 80,
+      protocol: 'HTTP',
+      defaultBackendSetName: undefined,
+      isSsl: false,
+    };
   }
 
   public constructNewBackendSetTemplate(name: string): IOracleBackEndSet {
@@ -101,6 +104,14 @@ export class OracleLoadBalancerTransformer {
       name: name,
       policy: LoadBalancingPolicy.ROUND_ROBIN,
       healthChecker: { protocol: 'HTTP', port: 80, urlPath: '/healthZ' },
+    };
+  }
+
+  public constructNewSSLConfiguration() {
+    return {
+      certificateName: '',
+      verifyDepth: 0,
+      verifyPeerCertificates: false,
     };
   }
 }

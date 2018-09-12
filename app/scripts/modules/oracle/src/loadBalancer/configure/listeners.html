@@ -14,7 +14,10 @@
         <tbody>
           <tr ng-repeat="listener in ctrl.listeners">
             <td>
-              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'HTTPS']"></select>
+              <input type="checkbox" name="isSsl" ng-model="listener.isSsl" on-change="ctrl.listenerIsSslChanged(listener)"/>
+            </td>
+            <td>
+              <select class="form-control input-sm" ng-model="listener.protocol" ng-options="protocol for protocol in ['HTTP', 'TCP']"></select>
             </td>
             <td>
               <input class="form-control input-sm" type="number" min="0" ng-model="listener.port" required/>
@@ -28,7 +31,7 @@
               </ui-select>
               <!-- <select class="form-control input-sm" required ng-model="listener.defaultBackendSetName" ng-options="backendSetName as backendSet.name for backendSet in loadBalancerCmd.backendSets"></select> -->
             </td>
-            <td><a href class="sm-label" ng-click="ctrl.removeListener(listener.name)"><span
+            <td><a href class="sm-label" ng-click="ctrl.removeListener($index)"><span
               class="glyphicon glyphicon-trash"></span></a></td>
           </tr>
           <tr ng-if="!ctrl.listenersUniqueProtocolPort()">

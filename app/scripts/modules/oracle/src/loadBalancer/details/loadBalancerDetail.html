@@ -46,13 +46,11 @@
     <collapsible-section heading="Load Balancer Details" expanded="true">
       <dl class="dl-horizontal dl-flex">
         <dt>Created</dt>
-        <dd>{{loadBalancer.elb.createdTime | timestamp}}</dd>
+        <dd>{{loadBalancer.timeCreated}}</dd>
         <dt>In</dt>
         <dd><account-tag account="loadBalancer.account" pad="right" provider="loadBalancer.type"></account-tag> {{loadBalancer.region}}</dd>
-        <dt>VNet</dt>
-        <dd>{{loadBalancer.name}}'s VCN</dd>
-        <dt>Subnet</dt>
-        <dd>{{loadBalancer.name}}'s subnet</dd>
+        <dt>Subnets</dt>
+        <dd ng-repeat="subnet in loadBalancer.subnets">{{subnet.name}}</dd>
       </dl>
       <dl class="horizontal-when-filters-collapsed">
         <dt ng-if="loadBalancer.serverGroups">Server Groups</dt>
@@ -69,52 +67,26 @@
           </ul>
         </dd>
       </dl>
-      <dl class="horizontal-when-filters-collapsed">
-        <dt ng-if="loadBalancer.elb.dnsName">DNS Name:</dt>
-        <dd>
-          <a target=_blank href="//{{loadBalancer.elb.dnsName}}">{{loadBalancer.elb.dnsName}}</a>
-          <copy-to-clipboard
-              class="copy-to-clipboard copy-to-clipboard-sm"
-              text="loadBalancer.elb.dnsName"
-              tool-tip="'Copy DNS Name to clipboard'">
-          </copy-to-clipboard>
-        </dd>
-      </dl>
     </collapsible-section>
-    <collapsible-section heading="Status" expanded="true">
+    <!-- <collapsible-section heading="Status" expanded="true">
       <health-counts class="pull-left" container="loadBalancer.instanceCounts"></health-counts>
-    </collapsible-section>
+    </collapsible-section> -->
     <collapsible-section heading="Backend Sets">
       <dd ng-repeat="backendSet in loadBalancer.backendSets">
-        {{backendSet.name}} {{backendSet.policy}} Health Check URL: {{backendSet.healthChecker.urlPath}}
+        <dl>
+          <dt>{{backendSet.name}}</dt>
+          <dd>{{backendSet.policy}}</dd>
+          <dd>Health Check: {{backendSet.healthChecker.urlPath}}</dd>
+        </dl>
       </dd>
-      <dl class="horizontal-when-filters-collapsed">
-        <dt>Target</dt>
-        <dd>{{loadBalancer.elb.probes[0].probeProtocol}}</dd>
-        <dt>Interval</dt>
-        <dd>{{loadBalancer.elb.probes[0].probeInterval}} seconds</dd>
-        <dt>Unhealthy Threshold</dt>
-        <dd>{{loadBalancer.elb.probes[0].unhealthyThreshold}}</dd>
-        <dt>Timeout</dt>
-        <dd>{{loadBalancer.elb.probes[0].timeout}} seconds</dd>
-      </dl>
     </collapsible-section>
     <collapsible-section heading="Listeners">
       <dl>
         <dt>Listener &rarr; Backend Set</dt>
         <dd ng-repeat="listener in loadBalancer.listeners">
-          {{listener.name}} {{listener.protocol}}:{{listener.port}} &rarr; {{listener.defaultBackendSetName}}
+          {{listener.protocol}}:{{listener.port}} &rarr; {{listener.defaultBackendSetName}}
         </dd>
       </dl>
-    </collapsible-section>
-    <collapsible-section heading="{{firewallsLabel}}">
-      <ul>
-        <li ng-repeat="securityGroup in securityGroups | orderBy:'name'">
-          <a ui-sref="^.firewallDetails({name:securityGroup.name, accountId: loadBalancer.account, region: loadBalancer.region, vpcId: loadBalancer.vpcId, provider: loadBalancer.provider})">
-            {{securityGroup.name}} ({{securityGroup.id}})
-          </a>
-        </li>
-      </ul>
     </collapsible-section>
   </div>
 </div>

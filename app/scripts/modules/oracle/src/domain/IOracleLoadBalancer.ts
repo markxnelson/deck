@@ -11,6 +11,8 @@ export enum LoadBalancingPolicy {
 }
 
 export interface IOracleSubnet extends ISubnet {
+  id: string;
+  name: string;
   availabilityDomain: string;
   securityListIds: string[];
   vcnId: string;
@@ -19,10 +21,10 @@ export interface IOracleSubnet extends ISubnet {
 export interface IOracleLoadBalancer extends ILoadBalancer {
   shape: string; // required
   isPrivate: boolean; // required
-  subnetIds: string[]; // required 1 for private LB, 2 for public LB
-  listeners?: IOracleListener[]; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
+  subnets: IOracleSubnet[]; // required 1 for private LB, 2 for public LB
+  listeners?: { [name: string]: IOracleListener }; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
   hostnames?: IOracleHostname[];
-  backendSets?: IOracleBackEndSet[]; // not required to create LB, but useless without it (TODO should we require backend set?)
+  backendSets?: { [name: string]: IOracleBackEndSet }; // not required to create LB, but useless without it (TODO should we require backend set?)
   freeformTags?: { [tagName: string]: string };
   // TODO support path route sets, certificates
 }
@@ -32,6 +34,7 @@ export interface IOracleListener {
   protocol: ListenerProtocol;
   port: number;
   defaultBackendSetName: string;
+  isSsl: boolean;
   sslConfiguration?: IOracleListenerSSLConfiguration;
   hostnames?: IOracleHostname[];
   // TODO support pathRouteSets
