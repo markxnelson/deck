@@ -134,7 +134,8 @@ module.exports = angular
         loadBalancerName: $scope.loadBalancer.name,
         credentials: $scope.loadBalancer.account,
         region: loadBalancer.region,
-        appName: app.name,
+        application: app.name,
+        loadBalancerId: $scope.loadBalancer.id,
       };
 
       const submitMethod = () => LoadBalancerWriter.deleteLoadBalancer(command, app);

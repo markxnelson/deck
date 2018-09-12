@@ -97,7 +97,7 @@ export interface IOracleLoadBalancerUpsertCommand extends ILoadBalancerUpsertCom
 }
 
 export interface IOracleLoadBalancerDeleteCommand extends ILoadBalancerDeleteCommand {
-  loadBalancerType: string;
+  loadBalancerId: string;
 }
 /*
 
