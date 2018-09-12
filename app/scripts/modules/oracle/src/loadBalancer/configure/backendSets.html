@@ -31,7 +31,7 @@
             <td>
               <input class="form-control input-sm" ng-model="backendSet.healthChecker.urlPath" required/>
             </td>
-            <td><a href class="sm-label" ng-click="ctrl.removeBackendSet(backendSet.name)"><span
+            <td><a href class="sm-label" ng-click="ctrl.removeBackendSet($index)"><span
               class="glyphicon glyphicon-trash"></span></a></td>
           </tr>
         </tbody>

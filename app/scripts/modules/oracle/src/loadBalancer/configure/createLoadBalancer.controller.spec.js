@@ -31,7 +31,7 @@ describe('Controller: oracleCreateLoadBalancerCtrl', function() {
   );
 
   it('correctly creates a default loadbalancer', function() {
-    var lb = this.$scope.loadBalancer;
+    var lb = this.$scope.loadBalancerCmd;
 
     expect(lb.probes.length).toEqual(1);
     expect(lb.loadBalancingRules.length).toEqual(1);
