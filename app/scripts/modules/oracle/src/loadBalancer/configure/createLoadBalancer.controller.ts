@@ -19,6 +19,7 @@ import { Application } from '../../../../core/src/application';
 import {
   IOracleBackEndSet,
   IOracleListener,
+  IOracleListenerCertificate,
   IOracleLoadBalancer,
   IOracleSubnet,
   LoadBalancingPolicy,
@@ -36,12 +37,11 @@ export class OracleLoadBalancerController implements IController {
   public oracle = 'oracle';
   public shapes: string[] = ['100Mbps', '400Mbps', '8000Mbps']; // TODO desagar use listShapes to get this from clouddriver later
   public loadBalancingPolicies: string[] = Object.keys(LoadBalancingPolicy).map(k => LoadBalancingPolicy[k as any]);
-  public taskMonitor: any;
   public pages: { [key: string]: any } = {
     properties: require('./createLoadBalancerProperties.html'),
     listeners: require('./listeners.html'),
-    healthCheck: require('./healthCheck.html'),
     backendSets: require('./backendSets.html'),
+    certificates: require('./certificates.html'),
   };
 
   public state: { [key: string]: boolean } = {
@@ -58,6 +58,7 @@ export class OracleLoadBalancerController implements IController {
   public numSubnetsAllowed = 1;
   public listeners: IOracleListener[] = [];
   public backendSets: IOracleBackEndSet[] = [];
+  public certificates: IOracleListenerCertificate[] = [];
 
   /*$scope,
   $uibModalInstance,
@@ -146,6 +147,7 @@ export class OracleLoadBalancerController implements IController {
       );
     }
     this.$scope.prevBackendSetNames = [];
+    this.$scope.prevCertNames = [];
     if (this.isNew) {
       this.updateName();
       this.updateLoadBalancerNames();
@@ -190,7 +192,7 @@ export class OracleLoadBalancerController implements IController {
    * @returns {boolean}
    */
   public listenersValid() {
-    return this.listenersUniqueProtocolPort() && this.listenersBackendSetsExist();
+    return this.listenersUniqueProtocolPort() && this.listenersBackendSetsExist() && this.listenersCertificatesExist();
   }
 
   /**
@@ -225,6 +227,18 @@ export class OracleLoadBalancerController implements IController {
     );
     return listenersWithNonExistentBackendSet.length === 0;
   }
+
+  public listenersCertificatesExist() {
+    // validate that the listeners' selected certificate names exist. This is needed because Angular
+    // does not clear the selected certificate from the drop down if the certificate is deleted.
+    const listenersWithNonExistentCertificate: IOracleListener[] = this.listeners.filter(
+      listener =>
+        listener.sslConfiguration &&
+        !this.certificates.find(cert => cert.certificateName === listener.sslConfiguration.certificateName),
+    );
+    return listenersWithNonExistentCertificate.length === 0;
+  }
+
   public updateName() {
     this.$scope.loadBalancerCmd.name = this.getName();
   }
@@ -291,7 +305,11 @@ export class OracleLoadBalancerController implements IController {
   }
 
   public listenerIsSslChanged(listener: IOracleListener) {
-    listener.sslConfiguration = this.oracleLoadBalancerTransformer.constructNewSSLConfiguration();
+    if (listener.isSsl) {
+      listener.sslConfiguration = this.oracleLoadBalancerTransformer.constructNewSSLConfiguration();
+    } else {
+      listener.sslConfiguration = undefined;
+    }
   }
 
   public calcNumSubnetsAllowed() {
@@ -329,6 +347,35 @@ export class OracleLoadBalancerController implements IController {
     if (prevName) {
       this.listeners.filter(lis => lis.defaultBackendSetName === prevName).forEach(lis => {
         lis.defaultBackendSetName = this.backendSets[idx].name;
+      });
+    }
+  }
+
+  public removeCert(idx: number) {
+    const cert = this.certificates[idx];
+    this.certificates.splice(idx, 1);
+    this.$scope.prevCertNames.splice(idx, 1);
+    // Also clear the certificateName field of any listeners who are using this certificate
+    this.listeners.forEach(lis => {
+      if (lis.sslConfiguration.certificateName === cert.certificateName) {
+        lis.sslConfiguration.certificateName = undefined;
+      }
+    });
+  }
+
+  public addCert() {
+    const nameSuffix: number = this.certificates.length + 1;
+    this.$scope.prevCertNames.push('');
+    this.certificates.push(
+      this.oracleLoadBalancerTransformer.constructNewCertificateTemplate('certificate' + nameSuffix),
+    );
+  }
+
+  public certNameChanged(idx: number) {
+    const prevName = this.$scope.prevCertNames && this.$scope.prevCertNames[idx];
+    if (prevName) {
+      this.listeners.filter(lis => lis.sslConfiguration.certificateName === prevName).forEach(lis => {
+        lis.sslConfiguration.certificateName = this.certificates[idx].certificateName;
       });
     }
   }
@@ -376,9 +423,16 @@ export class OracleLoadBalancerController implements IController {
         );
       }
 
-      // TODO desagar immediate!! have a listeners array in this object and directly populate
-      // in loadBalancerCmd at the end instead of this ugly re-doing. Also, validate uniqueness of listener names
-      // Should we also restrict protocol port to unique across listeners?
+      if (this.certificates.length > 0) {
+        this.$scope.loadBalancerCmd.certificates = this.certificates.reduce(
+          (certMap: { [name: string]: IOracleListenerCertificate }, cert: IOracleListenerCertificate) => {
+            certMap[cert.certificateName] = cert;
+            return certMap;
+          },
+          {},
+        );
+      }
+
       this.$scope.loadBalancerCmd.type = 'upsertLoadBalancer';
       if (!this.$scope.loadBalancerCmd.vnet && !this.$scope.loadBalancerCmd.subnetType) {
         this.$scope.loadBalancerCmd.securityGroups = null;

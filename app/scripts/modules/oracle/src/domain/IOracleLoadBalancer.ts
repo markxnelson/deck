@@ -22,6 +22,7 @@ export interface IOracleLoadBalancer extends ILoadBalancer {
   shape: string; // required
   isPrivate: boolean; // required
   subnets: IOracleSubnet[]; // required 1 for private LB, 2 for public LB
+  certificates: IOracleListenerCertificate[];
   listeners?: { [name: string]: IOracleListener }; // not required to create LB, but useless without it (TODO Can it be added later or should we require listener?)
   hostnames?: IOracleHostname[];
   backendSets?: { [name: string]: IOracleBackEndSet }; // not required to create LB, but useless without it (TODO should we require backend set?)
@@ -61,8 +62,8 @@ export interface IOracleBackEndSet {
 
 // TODO desagar Implement certificates
 export interface IOracleListenerCertificate {
-  name: string;
-  certificate: string;
+  certificateName: string;
+  publicCertificate: string;
   caCertificate: string;
   privateKey: string;
   passphrase: string;

@@ -7,6 +7,8 @@ import { Application } from '../../../core/src/application';
 import {
   IOracleBackEndSet,
   IOracleListener,
+  IOracleListenerCertificate,
+  IOracleListenerSSLConfiguration,
   IOracleLoadBalancer,
   IOracleLoadBalancerUpsertCommand,
   LoadBalancingPolicy,
@@ -107,11 +109,21 @@ export class OracleLoadBalancerTransformer {
     };
   }
 
-  public constructNewSSLConfiguration() {
+  public constructNewSSLConfiguration(): IOracleListenerSSLConfiguration {
     return {
       certificateName: '',
       verifyDepth: 0,
       verifyPeerCertificates: false,
+    };
+  }
+
+  public constructNewCertificateTemplate(name: string): IOracleListenerCertificate {
+    return {
+      certificateName: name,
+      publicCertificate: undefined,
+      caCertificate: undefined,
+      privateKey: undefined,
+      passphrase: undefined,
     };
   }
 }
