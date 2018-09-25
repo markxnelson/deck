@@ -16,7 +16,7 @@
                validate-unique="existingLoadBalancerNames"
                validate-ignore-case="true"
                name="loadBalancerName"/>
-        <validation-error ng-if="form.loadBalancerName.$error.validateUnique" message="There is already a load balancer in {{loadBalancer.credentials}}:{{loadBalancer.region}} with that name."></validation-error>
+        <validation-error ng-if="form.loadBalancerName.$error.validateUnique" message="There is already a load balancer in {{loadBalancerCmd.credentials}}:{{loadBalancerCmd.region}} with that name."></validation-error>
       </div>
     </div>
     <div class="form-group">
@@ -42,10 +42,10 @@
     <div class="form-group">
       <div class="col-md-3 sm-label-right">Account</div>
       <div class="col-md-7">
-        <account-select-field required component="loadBalancer" field="credentials" accounts="accounts" provider="'oracle'" on-change="ctrl.accountUpdated()"></account-select-field>
+        <account-select-field required component="loadBalancerCmd" field="credentials" accounts="accounts" provider="'oracle'" on-change="ctrl.accountUpdated()"></account-select-field>
       </div>
     </div>
-    <region-select-field required label-columns="3" component="loadBalancer" field="region" account="loadBalancer.credentials" provider="'oracle'" on-change="ctrl.regionUpdated()" regions="regions"></region-select-field>
+    <region-select-field required label-columns="3" component="loadBalancerCmd" field="region" account="loadBalancerCmd.credentials" provider="'oracle'" on-change="ctrl.regionUpdated()" regions="regions"></region-select-field>
 
     <div class="form-group">
       <div class="col-md-3 sm-label-right">Virtual Network</div>
