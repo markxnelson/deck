@@ -60,14 +60,6 @@ export class OracleLoadBalancerController implements IController {
   public backendSets: IOracleBackEndSet[] = [];
   public certificates: IOracleListenerCertificate[] = [];
 
-  /*$scope,
-  $uibModalInstance,
-  $state,
-  oracleLoadBalancerTransformer,
-  application,
-  loadBalancer,
-  isNew,*/
-
   constructor(
     private $scope: ng.IScope,
     private $uibModalInstance: IModalServiceInstance,
@@ -338,13 +330,14 @@ export class OracleLoadBalancerController implements IController {
 
   public addBackendSet() {
     const nameSuffix: number = this.backendSets.length + 1;
-    this.$scope.prevBackendSetNames.push('');
-    this.backendSets.push(this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate('backendSet' + nameSuffix));
+    const name: string = 'backendSet' + nameSuffix;
+    this.$scope.prevBackendSetNames.push(name);
+    this.backendSets.push(this.oracleLoadBalancerTransformer.constructNewBackendSetTemplate(name));
   }
 
   public backendSetNameChanged(idx: number) {
     const prevName = this.$scope.prevBackendSetNames && this.$scope.prevBackendSetNames[idx];
-    if (prevName) {
+    if (prevName && prevName !== this.backendSets[idx].name) {
       this.listeners.filter(lis => lis.defaultBackendSetName === prevName).forEach(lis => {
         lis.defaultBackendSetName = this.backendSets[idx].name;
       });
@@ -365,15 +358,14 @@ export class OracleLoadBalancerController implements IController {
 
   public addCert() {
     const nameSuffix: number = this.certificates.length + 1;
-    this.$scope.prevCertNames.push('');
-    this.certificates.push(
-      this.oracleLoadBalancerTransformer.constructNewCertificateTemplate('certificate' + nameSuffix),
-    );
+    const name: string = 'certificate' + nameSuffix;
+    this.$scope.prevCertNames.push(name);
+    this.certificates.push(this.oracleLoadBalancerTransformer.constructNewCertificateTemplate(name));
   }
 
   public certNameChanged(idx: number) {
     const prevName = this.$scope.prevCertNames && this.$scope.prevCertNames[idx];
-    if (prevName) {
+    if (prevName && prevName !== this.certificates[idx].certificateName) {
       this.listeners.filter(lis => lis.sslConfiguration.certificateName === prevName).forEach(lis => {
         lis.sslConfiguration.certificateName = this.certificates[idx].certificateName;
       });
