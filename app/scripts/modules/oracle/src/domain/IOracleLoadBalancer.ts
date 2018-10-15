@@ -27,6 +27,7 @@ export interface IOracleLoadBalancer extends ILoadBalancer {
   hostnames?: IOracleHostname[];
   backendSets?: { [name: string]: IOracleBackEndSet }; // not required to create LB, but useless without it (TODO should we require backend set?)
   freeformTags?: { [tagName: string]: string };
+  id?: string; // not required to create LB
   // TODO support path route sets, certificates
 }
 

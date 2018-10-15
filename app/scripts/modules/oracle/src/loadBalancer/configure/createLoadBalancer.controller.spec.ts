@@ -33,7 +33,10 @@ describe('Controller: oracleCreateLoadBalancerCtrl', function() {
       ) => {
         $scope = $rootScope.$new();
         $state = _$state_;
-        const application = applicationModelBuilder.createApplication('app', { key: 'loadBalancers', lazy: true });
+        const application = applicationModelBuilder.createApplicationForTests('app', {
+          key: 'loadBalancers',
+          lazy: true,
+        });
 
         const isNew = true;
         controller = $controller(OracleLoadBalancerController, {

@@ -254,6 +254,10 @@ export class OracleLoadBalancerController implements IController {
   public loadRegionsForAccount() {
     AccountService.getRegionsForAccount(this.$scope.loadBalancerCmd.credentials).then((regions: IRegion[]) => {
       this.$scope.regions = regions; // TODO desagar does this need to be in $scope?
+      if (regions.length === 1) {
+        this.$scope.loadBalancerCmd.region = regions[0].name;
+        this.regionUpdated();
+      }
     });
   }
 
@@ -261,6 +265,9 @@ export class OracleLoadBalancerController implements IController {
     InfrastructureCaches.clearCache('networks'); // TODO desagar previous code had this line. What does it do exactly? is it safe to clear?
     NetworkReader.listNetworksByProvider(this.oracle).then((vnets: INetwork[]) => {
       this.allVnets = vnets || [];
+      if (this.$scope.loadBalancerCmd.region) {
+        this.updateVnets();
+      }
     });
   }
 
@@ -382,7 +389,11 @@ export class OracleLoadBalancerController implements IController {
         clusterName: this.$scope.loadBalancerCmd.clusterName,
         resourceGroupName: this.$scope.loadBalancerCmd.clusterName,
         loadBalancerName: this.$scope.loadBalancerCmd.name,
+        loadBalancerId: null as string,
       };
+      if (this.loadBalancer && this.loadBalancer.id) {
+        params.loadBalancerId = this.loadBalancer.id;
+      }
 
       if (this.selectedVnet) {
         this.$scope.loadBalancerCmd.vpcId = this.selectedVnet.id;
