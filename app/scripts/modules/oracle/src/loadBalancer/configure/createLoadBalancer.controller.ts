@@ -324,6 +324,9 @@ export class OracleLoadBalancerController implements IController {
 
   public removeBackendSet(idx: number) {
     const backendSet = this.backendSets[idx];
+    if (idx !== 0) {
+      throw new Error('oh no!!');
+    }
     this.backendSets.splice(idx, 1);
     this.$scope.prevBackendSetNames.splice(idx, 1);
     // Also clear the defaultBackendSetName field of any listeners who are using this backendSet
@@ -332,6 +335,20 @@ export class OracleLoadBalancerController implements IController {
         lis.defaultBackendSetName = undefined;
       }
     });
+  }
+
+  public isBackendSetRemovable(idx: number): boolean {
+    const backendSet = this.backendSets[idx];
+    if (backendSet && backendSet.backends && backendSet.backends.length > 0) {
+      return false;
+    }
+    let hasListener = false;
+    this.listeners.forEach(lis => {
+      if (lis.defaultBackendSetName === backendSet.name) {
+        hasListener = true;
+      }
+    });
+    return !hasListener;
   }
 
   public addBackendSet() {

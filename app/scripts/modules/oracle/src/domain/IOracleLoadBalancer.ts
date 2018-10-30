@@ -63,6 +63,8 @@ export interface IOracleBackEndSet {
   policy: LoadBalancingPolicy;
   healthChecker: IOracleBackendSetHealthCheck;
   // TODO desagar sessionPersistenceConfiguration?: IOracleLoadBalancerSessionPersistenceConfiguration;
+  backends: any[];
+  isNew: boolean;
 }
 
 export interface IOracleListenerCertificate {

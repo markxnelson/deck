@@ -105,7 +105,6 @@ export class OracleLoadBalancerDetailController implements IController {
   public editLoadBalancer() {
     this.$uibModal.open({
       templateUrl: require('oracle/loadBalancer/configure/editLoadBalancer.html'),
-      // controller: 'oracleCreateLoadBalancerCtrl as ctrl',
       controller: OracleLoadBalancerController,
       controllerAs: 'ctrl',
       resolve: {
