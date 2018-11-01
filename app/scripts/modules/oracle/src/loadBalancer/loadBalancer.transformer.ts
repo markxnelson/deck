@@ -58,6 +58,7 @@ export class OracleLoadBalancerTransformer {
       shape: loadBalancer.shape,
       isPrivate: loadBalancer.isPrivate,
       subnetIds: loadBalancer.subnets.map(subnet => subnet.id),
+      certificates: loadBalancer.certificates,
       listeners: loadBalancer.listeners,
       hostnames: loadBalancer.hostnames,
       backendSets: loadBalancer.backendSets,
@@ -125,6 +126,7 @@ export class OracleLoadBalancerTransformer {
       caCertificate: undefined,
       privateKey: undefined,
       passphrase: undefined,
+      isNew: true,
     };
   }
 }

@@ -121,6 +121,11 @@ export class OracleLoadBalancerController implements IController {
         this.backendSets.push(this.$scope.loadBalancerCmd.backendSets[b]);
       });
     }
+    if (this.$scope.loadBalancerCmd.certificates) {
+      Object.keys(this.$scope.loadBalancerCmd.certificates).forEach(b => {
+        this.certificates.push(this.$scope.loadBalancerCmd.certificates[b]);
+      });
+    }
   }
 
   public initializeController() {
@@ -367,6 +372,17 @@ export class OracleLoadBalancerController implements IController {
     }
   }
 
+  public isCertRemovable(idx: number): boolean {
+    const cert = this.certificates[idx];
+    let hasListener = false;
+    this.listeners.forEach(lis => {
+      if (lis.isSsl && lis.sslConfiguration.certificateName === cert.certificateName) {
+        hasListener = true;
+      }
+    });
+    return !hasListener;
+  }
+
   public removeCert(idx: number) {
     const cert = this.certificates[idx];
     this.certificates.splice(idx, 1);
@@ -446,6 +462,10 @@ export class OracleLoadBalancerController implements IController {
         this.$scope.loadBalancerCmd.certificates = this.certificates.reduce(
           (certMap: { [name: string]: IOracleListenerCertificate }, cert: IOracleListenerCertificate) => {
             certMap[cert.certificateName] = cert;
+            if (!cert.isNew) {
+              // existing certificate sends only the name
+              certMap[cert.certificateName].publicCertificate = null;
+            }
             return certMap;
           },
           {},
