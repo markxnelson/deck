@@ -389,7 +389,7 @@ export class OracleLoadBalancerController implements IController {
     this.$scope.prevCertNames.splice(idx, 1);
     // Also clear the certificateName field of any listeners who are using this certificate
     this.listeners.forEach(lis => {
-      if (lis.sslConfiguration.certificateName === cert.certificateName) {
+      if (lis.sslConfiguration && lis.sslConfiguration.certificateName === cert.certificateName) {
         lis.sslConfiguration.certificateName = undefined;
       }
     });

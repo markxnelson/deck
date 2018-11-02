@@ -103,6 +103,16 @@ describe('Controller: oracleCreateLoadBalancerCtrl', function() {
     expect(controller.certificates[0].certificateName).toEqual('certificate1');
   });
 
+  it('adds & removes certificate', function() {
+    controller.addCert();
+    expect(controller.certificates).toBeDefined();
+    expect(controller.certificates.length).toEqual(2);
+    expect(controller.certificates[1].certificateName).toEqual('certificate2');
+    controller.removeCert(0);
+    expect(controller.certificates.length).toEqual(1);
+    expect(controller.certificates[0].certificateName).toEqual('certificate2');
+  });
+
   it('changed backend set name updates listener', function() {
     expect(controller.listeners[0].defaultBackendSetName).toEqual('backendSet1');
     controller.backendSets[0].name = 'UpdatedBackendSetName';
