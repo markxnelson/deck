@@ -329,9 +329,6 @@ export class OracleLoadBalancerController implements IController {
 
   public removeBackendSet(idx: number) {
     const backendSet = this.backendSets[idx];
-    if (idx !== 0) {
-      throw new Error('oh no!!');
-    }
     this.backendSets.splice(idx, 1);
     this.$scope.prevBackendSetNames.splice(idx, 1);
     // Also clear the defaultBackendSetName field of any listeners who are using this backendSet
@@ -445,6 +442,8 @@ export class OracleLoadBalancerController implements IController {
           },
           {},
         );
+      } else {
+        this.$scope.loadBalancerCmd.backendSets = {};
       }
 
       if (this.listeners.length > 0) {
@@ -456,6 +455,8 @@ export class OracleLoadBalancerController implements IController {
           },
           {},
         );
+      } else {
+        this.$scope.loadBalancerCmd.listeners = {};
       }
 
       if (this.certificates.length > 0) {
@@ -470,6 +471,8 @@ export class OracleLoadBalancerController implements IController {
           },
           {},
         );
+      } else {
+        this.$scope.loadBalancerCmd.certificates = {};
       }
 
       this.$scope.loadBalancerCmd.type = 'upsertLoadBalancer';
