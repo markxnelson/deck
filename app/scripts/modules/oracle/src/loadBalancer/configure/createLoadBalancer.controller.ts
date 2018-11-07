@@ -373,7 +373,7 @@ export class OracleLoadBalancerController implements IController {
     const cert = this.certificates[idx];
     let hasListener = false;
     this.listeners.forEach(lis => {
-      if (lis.isSsl && lis.sslConfiguration.certificateName === cert.certificateName) {
+      if (lis.isSsl && lis.sslConfiguration && lis.sslConfiguration.certificateName === cert.certificateName) {
         hasListener = true;
       }
     });
@@ -402,9 +402,11 @@ export class OracleLoadBalancerController implements IController {
   public certNameChanged(idx: number) {
     const prevName = this.$scope.prevCertNames && this.$scope.prevCertNames[idx];
     if (prevName && prevName !== this.certificates[idx].certificateName) {
-      this.listeners.filter(lis => lis.sslConfiguration.certificateName === prevName).forEach(lis => {
-        lis.sslConfiguration.certificateName = this.certificates[idx].certificateName;
-      });
+      this.listeners
+        .filter(lis => lis.sslConfiguration && lis.sslConfiguration.certificateName === prevName)
+        .forEach(lis => {
+          lis.sslConfiguration.certificateName = this.certificates[idx].certificateName;
+        });
     }
   }
 

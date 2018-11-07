@@ -105,7 +105,7 @@ export class OracleLoadBalancerTransformer {
     return {
       name: name,
       policy: LoadBalancingPolicy.ROUND_ROBIN,
-      healthChecker: { protocol: 'HTTP', port: 80, urlPath: '/healthZ' },
+      healthChecker: { protocol: 'HTTP', port: 80, urlPath: '/' },
       backends: [],
       isNew: true,
     };
