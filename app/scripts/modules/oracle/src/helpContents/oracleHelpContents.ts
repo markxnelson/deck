@@ -47,6 +47,14 @@ const helpContents = [
     key: 'oracle.serverGroup.sshAuthorizedKeys',
     value: '<p>The public SSH key for the default user on the instance.</p>',
   },
+  {
+    key: 'oracle.firewall.stack',
+    value: '(Optional) <b>Stack</b> Stack name',
+  },
+  {
+    key: 'oracle.firewall.detail',
+    value: '(Optional) <b>Detail</b> is a naming component to help distinguish specifics of the firewall.',
+  },
 ];
 
 helpContents.forEach(entry => HelpContentsRegistry.register(entry.key, entry.value));

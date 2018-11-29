@@ -3,9 +3,12 @@ import { module } from 'angular';
 import { CloudProviderRegistry, DeploymentStrategyRegistry } from '@spinnaker/core';
 
 import './helpContents/oracleHelpContents';
-import { ORACLE_LOAD_BALANCER_TRANSFORMER } from 'oracle/loadBalancer/loadBalancer.transformer';
-import { ORACLE_LOAD_BALANCER_CREATE_CONTROLLER } from 'oracle/loadBalancer/configure/createLoadBalancer.controller';
-import { ORACLE_LOAD_BALANCER_DETAIL_CONTROLLER } from 'oracle/loadBalancer/details/loadBalancerDetail.controller';
+import { ORACLE_LOAD_BALANCER_TRANSFORMER } from './loadBalancer/loadBalancer.transformer';
+import { ORACLE_LOAD_BALANCER_CREATE_CONTROLLER } from './loadBalancer/configure/createLoadBalancer.controller';
+import { ORACLE_LOAD_BALANCER_DETAIL_CONTROLLER } from './loadBalancer/details/loadBalancerDetail.controller';
+import { ORACLE_REACT_MODULE } from './reactShims/oracle.react.module';
+import { OracleFirewallModal } from 'oracle/securityGroup/configure/OracleFirewallModal';
+import { ORACLE_FIREWALL_TRANSFORMER } from 'oracle/securityGroup/firewall.transformer';
 
 const templates = require.context('./', true, /\.html$/);
 templates.keys().forEach(function(key) {
@@ -14,6 +17,7 @@ templates.keys().forEach(function(key) {
 
 export const ORACLE_MODULE = 'spinnaker.oracle';
 module(ORACLE_MODULE, [
+  ORACLE_REACT_MODULE,
   // Cache
   require('./cache/cacheConfigurer.service.js').name,
   // Pipeline
@@ -45,6 +49,7 @@ module(ORACLE_MODULE, [
   require('./securityGroup/securityGroup.reader.js').name,
   require('./securityGroup/securityGroup.transformer.js').name,
   require('./securityGroup/configure/createSecurityGroup.controller.js').name,
+  ORACLE_FIREWALL_TRANSFORMER,
 ]).config(function() {
   CloudProviderRegistry.registerProvider('oracle', {
     name: 'Oracle',
@@ -75,10 +80,11 @@ module(ORACLE_MODULE, [
       detailsTemplateUrl: require('./instance/details/instanceDetails.html'),
     },
     securityGroup: {
-      reader: 'oracleSecurityGroupReader',
-      transformer: 'oracleSecurityGroupTransformer',
-      createSecurityGroupTemplateUrl: require('./securityGroup/configure/createSecurityGroup.html'),
-      createSecurityGroupController: 'oracleCreateSecurityGroupCtrl',
+      CreateSecurityGroupModal: OracleFirewallModal,
+      // reader: 'oracleSecurityGroupReader',
+      transformer: 'oracleFirewallTransformer',
+      // createSecurityGroupTemplateUrl: require('./securityGroup/configure/createSecurityGroup.html'),
+      // createSecurityGroupController: 'oracleCreateSecurityGroupCtrl',
     },
   });
 });
