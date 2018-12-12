@@ -48,12 +48,24 @@ const helpContents = [
     value: '<p>The public SSH key for the default user on the instance.</p>',
   },
   {
+    key: 'oracle.firewall.name',
+    value: '(Optional) <b>Name</b> Firewall name',
+  },
+  {
     key: 'oracle.firewall.stack',
     value: '(Optional) <b>Stack</b> Stack name',
   },
   {
     key: 'oracle.firewall.detail',
     value: '(Optional) <b>Detail</b> is a naming component to help distinguish specifics of the firewall.',
+  },
+  {
+    key: 'oracle.firewall.cidr',
+    value: 'Example: 10.0.0.0/16',
+  },
+  {
+    key: 'oracle.firewall.portRange',
+    value: 'Examples: 80, 20-22 or All',
   },
 ];
 

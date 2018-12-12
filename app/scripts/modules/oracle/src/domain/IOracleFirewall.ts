@@ -1,10 +1,19 @@
 import { ISecurityGroup } from '@spinnaker/core';
 
+export enum Protocols {
+  TCP = 'TCP',
+  UDP = 'UDP',
+}
+
 export interface IOraclePortRange {
   min: number;
   max: number;
 }
 
+export enum IOracleSecurityRuleType {
+  INGRESS,
+  EGRESS,
+}
 export interface IOracleIcmpOptions {
   code: number;
   type: number;
@@ -16,15 +25,21 @@ export interface IOraclePortRangeOptions {
 }
 
 export interface IOracleSecurityRule {
-  icmpOptions: IOracleIcmpOptions;
+  icmpOptions?: IOracleIcmpOptions;
   protocol: string;
   isStateless: boolean;
-  tcpOptions: IOraclePortRangeOptions;
-  udpOptions: IOraclePortRangeOptions;
+  tcpOptions?: IOraclePortRangeOptions;
+  udpOptions?: IOraclePortRangeOptions;
 }
 
 export interface IOracleIngressSecurityRule extends IOracleSecurityRule {
   source: string;
+  sourceType: IOracleFirewallSourceType;
+}
+
+export enum IOracleFirewallSourceType {
+  CIDR_BLOCK = 'CIDR_BLOCK',
+  SERVICE_CIDR_BLOCK = 'SERVICE_CIDR_BLOCK',
 }
 
 export enum IOracleFirewallDestinationType {
@@ -40,5 +55,6 @@ export interface IOracleEgressSecurityRule extends IOracleSecurityRule {
 export interface IOracleFirewall extends ISecurityGroup {
   ingressSecurityRules: IOracleIngressSecurityRule[];
   egressSecurityRules: IOracleEgressSecurityRule[];
+  subnetIds: string[];
   freeformTags?: { [tagName: string]: string };
 }

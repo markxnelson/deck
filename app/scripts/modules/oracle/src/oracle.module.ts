@@ -59,6 +59,9 @@ module(ORACLE_MODULE, [
     image: {
       reader: 'oracleImageReader',
     },
+    logo: {
+      path: require('./logo/oracle-cloud-logo.png'),
+    },
     loadBalancer: {
       transformer: 'oracleLoadBalancerTransformer',
       detailsTemplateUrl: require('./loadBalancer/details/loadBalancerDetail.html'),
