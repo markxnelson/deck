@@ -135,7 +135,11 @@ export class OracleFirewallModal extends React.Component<IOracleFirewallModalPro
         <OracleFirewallLocation application={application} name={firewallCommand.name} />
         <OracleIngressRuleList />
         <OracleEgressRuleList />
-        <OracleFirewallSubnetAttachments application={application} vpcId={firewallCommand.vpcId} />
+        <OracleFirewallSubnetAttachments
+          application={application}
+          name={firewallCommand.name}
+          subnetIds={firewallCommand.subnetIds}
+        />
       </WizardModal>
     );
     /*

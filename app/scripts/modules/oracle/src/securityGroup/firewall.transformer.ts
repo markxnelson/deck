@@ -14,6 +14,7 @@ export class OracleFirewallTransformer {
   public constructNewFirewallTemplate(application: Application): IOracleFirewall {
     return {
       name: application.name,
+      application: application.name,
       cloudProvider: 'oracle',
       credentials: undefined,
       region: undefined,
