@@ -80,7 +80,7 @@ export class OracleSecurityRuleRow extends React.Component<IOracleSecurityRulePr
   private statelessChanged = (evt: React.ChangeEvent<HTMLInputElement>) => {
     evt.preventDefault();
     const newValue: boolean = Boolean(evt.target.value);
-    this.props.securityRule.isStateless = newValue;
+    this.props.securityRule.stateless = newValue;
     this.props.ruleChangedFunction(this.props.index, this.props.securityRule);
   };
 
@@ -179,7 +179,7 @@ export class OracleSecurityRuleRow extends React.Component<IOracleSecurityRulePr
           </select>
         </td>
         <td>
-          <input type="checkbox" checked={securityRule.isStateless} onChange={this.statelessChanged} />
+          <input type="checkbox" checked={securityRule.stateless} onChange={this.statelessChanged} />
         </td>
         <td>
           <input

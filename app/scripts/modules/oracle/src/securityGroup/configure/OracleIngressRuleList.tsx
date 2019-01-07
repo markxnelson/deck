@@ -12,21 +12,21 @@ export class OracleIngressRuleListComponent extends React.Component<IOracleFirew
 
   private addRule = (evt: React.MouseEvent<HTMLButtonElement>) => {
     evt.preventDefault();
-    const { ingressSecurityRules } = this.props.formik.values;
-    ingressSecurityRules.push(OracleReactInjector.oracleFirewallTransformer.constructNewIngressRule());
-    this.props.formik.setFieldValue('ingressSecurityRules', ingressSecurityRules);
+    const { inboundRules } = this.props.formik.values;
+    inboundRules.push(OracleReactInjector.oracleFirewallTransformer.constructNewIngressRule());
+    this.props.formik.setFieldValue('inboundRules', inboundRules);
   };
 
   private deleteRule = (index: number) => {
-    const { ingressSecurityRules } = this.props.formik.values;
-    ingressSecurityRules.splice(index, 1);
-    this.props.formik.setFieldValue('ingressSecurityRules', ingressSecurityRules);
+    const { inboundRules } = this.props.formik.values;
+    inboundRules.splice(index, 1);
+    this.props.formik.setFieldValue('inboundRules', inboundRules);
   };
 
   private ruleChanged = (index: number, newRule: IOracleIngressSecurityRule) => {
-    const { ingressSecurityRules } = this.props.formik.values;
-    ingressSecurityRules[index] = newRule;
-    this.props.formik.setFieldValue('ingressSecurityRules', ingressSecurityRules);
+    const { inboundRules } = this.props.formik.values;
+    inboundRules[index] = newRule;
+    this.props.formik.setFieldValue('inboundRules', inboundRules);
   };
 
   public validate(values: IOracleFirewall) {
@@ -40,11 +40,11 @@ export class OracleIngressRuleListComponent extends React.Component<IOracleFirew
   }
 
   public render() {
-    const { ingressSecurityRules } = this.props.formik.values;
-    if (!ingressSecurityRules) {
+    const { inboundRules } = this.props.formik.values;
+    if (!inboundRules) {
       return <div />;
     }
-    const rows: any = ingressSecurityRules.map((securityRule: IOracleIngressSecurityRule, index: number) => (
+    const rows: any = inboundRules.map((securityRule: IOracleIngressSecurityRule, index: number) => (
       <OracleSecurityRuleRow
         securityRule={securityRule}
         securityRuleType={IOracleSecurityRuleType.INGRESS}

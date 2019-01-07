@@ -25,9 +25,10 @@ export interface IOraclePortRangeOptions {
 }
 
 export interface IOracleSecurityRule {
+  class: String;
   icmpOptions?: IOracleIcmpOptions;
   protocol: string;
-  isStateless: boolean;
+  stateless: boolean;
   tcpOptions?: IOraclePortRangeOptions;
   udpOptions?: IOraclePortRangeOptions;
 }
@@ -53,8 +54,8 @@ export interface IOracleEgressSecurityRule extends IOracleSecurityRule {
 }
 
 export interface IOracleFirewall extends ISecurityGroup {
-  ingressSecurityRules: IOracleIngressSecurityRule[];
-  egressSecurityRules: IOracleEgressSecurityRule[];
+  inboundRules: IOracleIngressSecurityRule[];
+  outboundRules: IOracleEgressSecurityRule[];
   subnetIds: string[];
   freeformTags?: { [tagName: string]: string };
 }

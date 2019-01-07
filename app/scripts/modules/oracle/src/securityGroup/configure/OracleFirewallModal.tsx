@@ -146,8 +146,8 @@ export class OracleFirewallModal extends React.Component<IOracleFirewallModalPro
     <OracleFirewallSecList application={application} isNew={isNew} selectedAccountName={firewallCommand.credentials} selectedRegionName={firewallCommand.region}/>
 
     <SecurityRules isNew={isNew}
-                       ingressSecurityRules={firewallCommand.ingressSecurityRules}
-                       egressSecurityRules={firewallCommand.egressSecurityRules}/>
+                       inboundRules={firewallCommand.inboundRules}
+                       outboundRules={firewallCommand.outboundRules}/>
      */
   }
 }

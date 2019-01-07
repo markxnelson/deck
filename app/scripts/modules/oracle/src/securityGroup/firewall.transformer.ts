@@ -22,19 +22,20 @@ export class OracleFirewallTransformer {
       vpcId: undefined,
       stack: '',
       detail: '',
-      ingressSecurityRules: [],
-      egressSecurityRules: [],
+      inboundRules: [],
+      outboundRules: [],
       subnetIds: [],
     };
   }
 
   public constructNewIngressRule(): IOracleIngressSecurityRule {
     return {
+      class: 'com.netflix.spinnaker.clouddriver.oracle.model.OracleIngressSecurityRule',
       source: 'somesource',
       sourceType: IOracleFirewallSourceType.CIDR_BLOCK,
       icmpOptions: undefined,
       protocol: 'TCP',
-      isStateless: true,
+      stateless: true,
       tcpOptions: {
         sourcePortRange: { min: 0, max: 0 },
         destinationPortRange: { min: 80, max: 80 },
@@ -45,11 +46,12 @@ export class OracleFirewallTransformer {
 
   public constructNewEgressRule(): IOracleEgressSecurityRule {
     return {
+      class: 'com.netflix.spinnaker.clouddriver.oracle.model.OracleEgressSecurityRule',
       destination: 'someDest',
       destinationType: IOracleFirewallDestinationType.CIDR_BLOCK,
       icmpOptions: undefined,
       protocol: 'TCP',
-      isStateless: true,
+      stateless: true,
       tcpOptions: {
         sourcePortRange: { min: 0, max: 0 },
         destinationPortRange: { min: 80, max: 80 },

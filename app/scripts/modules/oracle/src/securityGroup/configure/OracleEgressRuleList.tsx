@@ -12,21 +12,21 @@ export class OracleEgressRuleListComponent extends React.Component<IOracleFirewa
 
   private addRule = (evt: React.MouseEvent<HTMLButtonElement>) => {
     evt.preventDefault();
-    const { egressSecurityRules } = this.props.formik.values;
-    egressSecurityRules.push(OracleReactInjector.oracleFirewallTransformer.constructNewEgressRule());
-    this.props.formik.setFieldValue('egressSecurityRules', egressSecurityRules);
+    const { outboundRules } = this.props.formik.values;
+    outboundRules.push(OracleReactInjector.oracleFirewallTransformer.constructNewEgressRule());
+    this.props.formik.setFieldValue('outboundRules', outboundRules);
   };
 
   private deleteRule = (index: number) => {
-    const { egressSecurityRules } = this.props.formik.values;
-    egressSecurityRules.splice(index, 1);
-    this.props.formik.setFieldValue('egressSecurityRules', egressSecurityRules);
+    const { outboundRules } = this.props.formik.values;
+    outboundRules.splice(index, 1);
+    this.props.formik.setFieldValue('outboundRules', outboundRules);
   };
 
   private ruleChanged = (index: number, newRule: IOracleEgressSecurityRule) => {
-    const { egressSecurityRules } = this.props.formik.values;
-    egressSecurityRules[index] = newRule;
-    this.props.formik.setFieldValue('egressSecurityRules', egressSecurityRules);
+    const { outboundRules } = this.props.formik.values;
+    outboundRules[index] = newRule;
+    this.props.formik.setFieldValue('outboundRules', outboundRules);
   };
 
   public validate(values: IOracleFirewall) {
@@ -40,11 +40,11 @@ export class OracleEgressRuleListComponent extends React.Component<IOracleFirewa
   }
 
   public render() {
-    const { egressSecurityRules } = this.props.formik.values;
-    if (!egressSecurityRules) {
+    const { outboundRules } = this.props.formik.values;
+    if (!outboundRules) {
       return <div />;
     }
-    const rows: any = egressSecurityRules.map((securityRule: IOracleEgressSecurityRule, index: number) => (
+    const rows: any = outboundRules.map((securityRule: IOracleEgressSecurityRule, index: number) => (
       <OracleSecurityRuleRow
         securityRule={securityRule}
         securityRuleType={IOracleSecurityRuleType.EGRESS}
