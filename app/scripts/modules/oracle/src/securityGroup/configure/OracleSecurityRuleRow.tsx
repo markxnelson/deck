@@ -185,8 +185,7 @@ export class OracleSecurityRuleRow extends React.Component<IOracleSecurityRulePr
           <input
             className="form-control input-sm target-group-name"
             type="text"
-            value={this.sourcePortRangeToString()}
-            onChange={this.sourcePortRangeChanged}
+            onBlur={this.sourcePortRangeChanged}
             required={false}
           />
         </td>
@@ -194,8 +193,7 @@ export class OracleSecurityRuleRow extends React.Component<IOracleSecurityRulePr
           <input
             className="form-control input-sm target-group-name"
             type="text"
-            value={this.destPortRangeToString()}
-            onChange={this.destPortRangeChanged}
+            onBlur={this.destPortRangeChanged}
             required={false}
           />
         </td>
